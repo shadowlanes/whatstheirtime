@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
         nameForm.classList.add('hidden');
         welcomeScreen.classList.remove('hidden');
         userNameSpan.textContent = name;
+        
+        // Initialize friend time functionality once user is logged in
+        UIManager.initFriendTimeUI();
     }
     
     function showNameForm() {
@@ -57,5 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         // Stash the event so it can be triggered later
         deferredPrompt = e;
+    });
+    
+    // Clean up resources when leaving the page
+    window.addEventListener('beforeunload', () => {
+        UIManager.cleanup();
     });
 });

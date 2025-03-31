@@ -104,7 +104,10 @@ h2 {
 }
 
 .install-info {
-    margin-top: 20px;
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    text-align: center;
 }
 
 #install-instructions {
@@ -148,4 +151,122 @@ h2 {
     .device-section {
         flex: 1;
     }
+}
+
+/* Friend Time Zone Feature Styles */
+
+.friends-section {
+    margin-top: 30px;
+    text-align: left;
+}
+
+.friends-section h3 {
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+}
+
+.friends-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.friend-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.friend-card h4 {
+    margin-bottom: 8px;
+    color: #4285f4;
+}
+
+.friend-time {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.friend-city {
+    color: #70757a;
+    font-size: 14px;
+}
+
+.friend-form {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.friend-form h4 {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.friend-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.form-actions button {
+    flex: 1;
+}
+
+.suggestions-container {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover, .suggestion-item.selected {
+    background-color: #f0f7ff;
+}
+
+.delete-friend {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #d93025;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+.delete-friend:hover {
+    opacity: 1;
+}
+
+#add-friend-btn {
+    margin-bottom: 15px;
 }

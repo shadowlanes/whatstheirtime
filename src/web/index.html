@@ -19,6 +19,33 @@
         <main>
             <div id="welcome-screen" class="hidden">
                 <h2>Welcome, <span id="user-name"></span>!</h2>
+                
+                <div class="friends-section">
+                    <h3>Your Friends' Time</h3>
+                    <div id="friends-container" class="friends-container"></div>
+                    
+                    <button id="add-friend-btn" class="btn">Add a Friend</button>
+                    
+                    <div id="friend-form-container" class="friend-form hidden">
+                        <h4>Add a Friend</h4>
+                        <form id="friend-form">
+                            <div class="form-group">
+                                <label for="friend-name">Friend's Name</label>
+                                <input type="text" id="friend-name" placeholder="Friend's name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="friend-city">City</label>
+                                <input type="text" id="friend-city" placeholder="Start typing a city name..." required>
+                                <div id="city-suggestions" class="suggestions-container"></div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="secondary-btn" id="cancel-add-friend">Cancel</button>
+                                <button type="submit" class="btn">Add</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
                 <div class="install-info">
                     <button id="install-info-btn" class="secondary-btn">How to install this app</button>
                     <div id="install-instructions" class="hidden">
@@ -57,7 +84,13 @@
         </main>
     </div>
     
-    <script src="app.js"></script>
+    <script src="./js/cityData.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/friendManager.js"></script>
+    <script src="./js/timeManager.js"></script>
+    <script src="./js/uiManager.js"></script>
+    <!-- Ensure app.js runs last after all modules are loaded -->
+    <script src="app.js" defer></script> 
     <script>
         // Register service worker
         if ('serviceWorker' in navigator) {
