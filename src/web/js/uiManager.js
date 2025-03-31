@@ -7,6 +7,65 @@ const UIManager = (function() {
     const timeUpdateIntervals = {};
     
     /**
+     * Sort friends by their current time (earliest first)
+     * @param {Object[]} friends - Array of friend objects
+     * @returns {Object[]} Sorted array of friend objects
+     */
+    function sortFriendsByTime(friends) {
+        return [...friends].sort((a, b) => {
+            // Get current time for each friend's timezone
+            const timeA = TimeManager.getCurrentTimeInTimezone(a.timezone);
+            const timeB = TimeManager.getCurrentTimeInTimezone(b.timezone);
+            
+            // Compare hours first (0-23)
+            const hourA = timeA.getHours();
+            const hourB = timeB.getHours();
+            
+            if (hourA !== hourB) {
+                return hourA - hourB; // Sort by hour ascending (early hours first)
+            }
+            
+            // If hours are the same, compare minutes
+            return timeA.getMinutes() - timeB.getMinutes();
+        });
+    }
+    
+    /**
+     * Render all friends from storage
+     */
+    function renderAllFriends() {
+        const friends = FriendManager.getAllFriends();
+        
+        // Clear any existing friend cards
+        const friendsContainer = document.getElementById('friends-container');
+        if (friendsContainer) {
+            friendsContainer.innerHTML = '';
+        }
+        
+        // Clear any existing intervals
+        Object.keys(timeUpdateIntervals).forEach(key => {
+            clearInterval(timeUpdateIntervals[key]);
+            delete timeUpdateIntervals[key];
+        });
+        
+        // Sort friends by time (earliest first)
+        const sortedFriends = sortFriendsByTime(friends);
+        
+        // Render each friend in sorted order
+        sortedFriends.forEach(friend => {
+            renderFriendCard(friend);
+        });
+    }
+    
+    /**
+     * Re-sort and refresh all friends (to update ordering)
+     */
+    function refreshFriendOrder() {
+        // Re-render all friends to update the order
+        renderAllFriends();
+    }
+    
+    /**
      * Initialize the friend time UI
      */
     function initFriendTimeUI() {
@@ -174,6 +233,14 @@ const UIManager = (function() {
                 citySuggestions.style.display = 'none';
             }
         });
+        
+        // Set up periodic re-sorting of friends list (every hour)
+        const resortInterval = setInterval(() => {
+            refreshFriendOrder();
+        }, 60 * 60 * 1000); // Every hour
+        
+        // Store interval for cleanup
+        timeUpdateIntervals['resort'] = resortInterval;
     }
     
     /**
@@ -328,30 +395,6 @@ const UIManager = (function() {
     }
     
     /**
-     * Render all friends from storage
-     */
-    function renderAllFriends() {
-        const friends = FriendManager.getAllFriends();
-        
-        // Clear any existing friend cards
-        const friendsContainer = document.getElementById('friends-container');
-        if (friendsContainer) {
-            friendsContainer.innerHTML = '';
-        }
-        
-        // Clear any existing intervals
-        Object.keys(timeUpdateIntervals).forEach(key => {
-            clearInterval(timeUpdateIntervals[key]);
-            delete timeUpdateIntervals[key];
-        });
-        
-        // Render each friend
-        friends.forEach(friend => {
-            renderFriendCard(friend);
-        });
-    }
-    
-    /**
      * Clean up intervals and event listeners (call when leaving the page)
      */
     function cleanup() {
@@ -363,6 +406,7 @@ const UIManager = (function() {
     return {
         initFriendTimeUI,
         renderAllFriends,
+        refreshFriendOrder,
         cleanup
     };
 })();
