@@ -82,6 +82,12 @@ const UIManager = (function() {
         formOverlay.className = 'form-overlay';
         document.body.appendChild(formOverlay);
         
+        // Make sure the form is moved to be a direct child of the body
+        // This ensures it's not affected by any parent element's styles
+        if (friendFormContainer) {
+            document.body.appendChild(friendFormContainer);
+        }
+        
         // Load existing friends
         renderAllFriends();
         

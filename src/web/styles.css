@@ -332,7 +332,7 @@ h3 {
     letter-spacing: 0.3px;
 }
 
-/* Friend form modal fix */
+/* Complete fix for friend form modal */
 .friend-form {
     background-color: #fff;
     border-radius: 24px;
@@ -344,10 +344,9 @@ h3 {
     transform: translate(-50%, -50%);
     width: 90%;
     max-width: 450px;
-    z-index: 101;
+    z-index: 200; /* Much higher z-index to ensure it's above everything */
     max-height: 80vh;
     overflow-y: auto;
-    backdrop-filter: none; /* Remove blur */
     border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
@@ -368,30 +367,24 @@ h3 {
     font-size: 15px;
 }
 
-/* Fix button sizing in friend form */
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    margin-top: 25px;
+/* Fix form overlay to properly display behind the modal */
+.form-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(90, 125, 124, 0.25);
+    z-index: 150; /* Lower than the form but higher than other content */
+    backdrop-filter: blur(1px);
 }
 
-.form-actions button {
-    flex: 1;
-    padding: 14px 0;
-    font-size: 16px;
-    font-weight: 600;
+.form-overlay.active {
+    display: block;
 }
 
-.form-actions .secondary-btn {
-    font-size: 16px;
-    padding: 14px 0;
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+/* Ensure suggestions container appears above other content but below modal */
 .suggestions-container {
     position: absolute;
     background-color: #fff;
@@ -399,11 +392,10 @@ h3 {
     border-radius: 15px;
     max-height: 200px;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 210; /* Higher than the form to show above it */
     width: 100%;
     box-shadow: 0 10px 25px rgba(90, 125, 124, 0.2);
     display: none;
-    backdrop-filter: none; /* Remove blur */
 }
 
 .suggestion-item {
@@ -514,8 +506,8 @@ h3 {
     right: 0;
     bottom: 0;
     background-color: rgba(90, 125, 124, 0.25);
-    z-index: 100;
-    backdrop-filter: blur(1px); /* Reduce blur */
+    /* z-index: 20; */ /* Keep lower than the form's z-index */
+    /* backdrop-filter: blur(1px); */ /* Reduce blur */
 }
 
 .form-overlay.active {
