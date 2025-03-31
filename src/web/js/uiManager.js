@@ -147,10 +147,46 @@ const UIManager = (function() {
         // Sort friends by time (earliest first)
         const sortedFriends = sortFriendsByTime(friends);
         
+        // Update stats counter
+        updateFriendStats(sortedFriends);
+        
         // Render each friend in sorted order
         sortedFriends.forEach(friend => {
             renderFriendCard(friend);
         });
+    }
+    
+    /**
+     * Update the friend statistics display
+     * @param {Array} friends - Array of friend objects
+     */
+    function updateFriendStats(friends) {
+        const statsContainer = document.getElementById('friend-stats');
+        if (!statsContainer) return;
+        
+        // Count unique timezones
+        const uniqueTimezones = new Set();
+        friends.forEach(friend => uniqueTimezones.add(friend.timezone));
+        
+        // Update the stats display
+        statsContainer.innerHTML = `
+            <span class="stat-item">
+                <span class="stat-value">${friends.length}</span>
+                <span class="stat-label">Friend${friends.length !== 1 ? 's' : ''}</span>
+            </span>
+            <span class="stat-divider">•</span>
+            <span class="stat-item">
+                <span class="stat-value">${uniqueTimezones.size}</span>
+                <span class="stat-label">Timezone${uniqueTimezones.size !== 1 ? 's' : ''}</span>
+            </span>
+        `;
+        
+        // Make stats visible if there are friends
+        if (friends.length > 0) {
+            statsContainer.classList.remove('hidden');
+        } else {
+            statsContainer.classList.add('hidden');
+        }
     }
     
     /**
@@ -173,15 +209,37 @@ const UIManager = (function() {
         const citySuggestions = document.getElementById('city-suggestions');
         const friendNameInput = document.getElementById('friend-name');
         
+        // Make sure the modal is hidden initially
+        if (friendFormContainer) {
+            friendFormContainer.classList.add('hidden');
+        }
+        
+        // Make sure the add friend button is visible
+        if (addFriendBtn) {
+            addFriendBtn.classList.remove('hidden');
+            addFriendBtn.style.display = 'flex';
+        }
+        
         // Create form overlay for modal effect
-        const formOverlay = document.createElement('div');
-        formOverlay.className = 'form-overlay';
-        document.body.appendChild(formOverlay);
+        let formOverlay = document.querySelector('.form-overlay');
+        if (!formOverlay) {
+            formOverlay = document.createElement('div');
+            formOverlay.className = 'form-overlay';
+            document.body.appendChild(formOverlay);
+        }
         
         // Make sure the form is moved to be a direct child of the body
-        // This ensures it's not affected by any parent element's styles
         if (friendFormContainer) {
-            document.body.appendChild(friendFormContainer);
+            // First remove it from its current parent if not already a direct child of body
+            if (friendFormContainer.parentNode && friendFormContainer.parentNode !== document.body) {
+                friendFormContainer.parentNode.removeChild(friendFormContainer);
+                // Then append it directly to the body
+                document.body.appendChild(friendFormContainer);
+            }
+            
+            // Ensure proper styling
+            friendFormContainer.style.zIndex = '2000';
+            friendFormContainer.style.position = 'fixed';
         }
         
         // Load existing friends
@@ -190,30 +248,61 @@ const UIManager = (function() {
         // Add friend button click
         if (addFriendBtn) {
             addFriendBtn.addEventListener('click', () => {
-                friendFormContainer.classList.remove('hidden');
-                formOverlay.classList.add('active');
-                friendNameInput.focus();
+                if (friendFormContainer) {
+                    friendFormContainer.classList.remove('hidden');
+                    formOverlay.classList.add('active');
+                    if (friendNameInput) friendNameInput.focus();
+                }
             });
         }
         
-        // Cancel adding friend
+        // Cancel adding friend - FIX: Use stopPropagation
         if (cancelAddFriendBtn) {
-            cancelAddFriendBtn.addEventListener('click', () => {
+            cancelAddFriendBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 hideAddFriendForm();
             });
         }
         
-        // Close form when clicking overlay
-        formOverlay.addEventListener('click', () => {
-            hideAddFriendForm();
-        });
-        
-        function hideAddFriendForm() {
-            friendFormContainer.classList.add('hidden');
-            formOverlay.classList.remove('active');
-            friendForm.reset();
-            citySuggestions.style.display = 'none';
+        // Close form when clicking overlay - FIX: Check target more carefully
+        if (formOverlay) {
+            formOverlay.addEventListener('click', (e) => {
+                // Make sure we're clicking the overlay itself, not its children
+                if (e.target === formOverlay) {
+                    e.stopPropagation();
+                    hideAddFriendForm();
+                }
+            });
         }
+        
+        // FIX: Better implementation of hideAddFriendForm
+        function hideAddFriendForm() {
+            console.log('Hiding friend form');
+            if (friendFormContainer) {
+                friendFormContainer.classList.add('hidden');
+            }
+            
+            if (formOverlay) {
+                formOverlay.classList.remove('active');
+            }
+            
+            if (friendForm) {
+                friendForm.reset();
+            }
+            
+            if (citySuggestions) {
+                citySuggestions.style.display = 'none';
+            }
+        }
+        
+        // Handle escape key for closing form - Fix the event listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && friendFormContainer && 
+                !friendFormContainer.classList.contains('hidden')) {
+                hideAddFriendForm();
+            }
+        });
         
         // City search input
         if (friendCityInput) {
@@ -280,10 +369,11 @@ const UIManager = (function() {
             });
         }
         
-        // Handle form submission
+        // Handle form submission - FIX: Ensure form is properly hidden after submission
         if (friendForm) {
             friendForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 
                 const friendName = friendNameInput.value.trim();
                 const cityInput = friendCityInput.value.trim();
@@ -319,13 +409,6 @@ const UIManager = (function() {
                 }
             });
         }
-        
-        // Handle escape key for closing form
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !friendFormContainer.classList.contains('hidden')) {
-                hideAddFriendForm();
-            }
-        });
         
         // Click outside suggestions to close them
         document.addEventListener('click', (e) => {
@@ -530,6 +613,9 @@ const UIManager = (function() {
             if (card) {
                 card.remove();
             }
+            
+            // Update the friend stats
+            updateFriendStats(FriendManager.getAllFriends());
         }
     }
     

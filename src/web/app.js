@@ -46,6 +46,53 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Initialize friend time functionality once user is logged in
         UIManager.initFriendTimeUI();
+        
+        // Ensure the add friend button is visible
+        const addFriendBtn = document.getElementById('add-friend-btn');
+        if (addFriendBtn) {
+            addFriendBtn.classList.remove('hidden');
+            addFriendBtn.style.display = 'flex';
+            addFriendBtn.style.opacity = '1';
+            addFriendBtn.style.visibility = 'visible';
+            
+            // Log to confirm the button exists and should be visible
+            console.log('Add friend button should now be visible');
+        } else {
+            // If the button doesn't exist, create it
+            console.warn('Add friend button not found, creating it');
+            createAddFriendButton();
+        }
+    }
+    
+    // Function to create the add friend button if it doesn't exist
+    function createAddFriendButton() {
+        const existingBtn = document.getElementById('add-friend-btn');
+        if (existingBtn) return; // Don't create if it already exists
+        
+        const btn = document.createElement('button');
+        btn.id = 'add-friend-btn';
+        btn.className = 'floating-action-btn';
+        btn.title = 'Add a friend';
+        
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'plus-icon';
+        iconSpan.textContent = '+';
+        
+        btn.appendChild(iconSpan);
+        document.body.appendChild(btn);
+        
+        // Add event listener
+        btn.addEventListener('click', () => {
+            const friendFormContainer = document.getElementById('friend-form-container');
+            const formOverlay = document.querySelector('.form-overlay');
+            const friendNameInput = document.getElementById('friend-name');
+            
+            if (friendFormContainer) {
+                friendFormContainer.classList.remove('hidden');
+                if (formOverlay) formOverlay.classList.add('active');
+                if (friendNameInput) friendNameInput.focus();
+            }
+        });
     }
     
     function showNameForm() {
