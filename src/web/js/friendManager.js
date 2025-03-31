@@ -28,10 +28,16 @@ const FriendManager = (function() {
             throw new Error(`You already have a friend named ${name}`);
         }
         
+        // Find the country for the city
+        const cities = CityData.getAllCities();
+        const cityData = cities.find(c => c.name.toLowerCase() === city.toLowerCase());
+        const country = cityData ? cityData.country : '';
+        
         const newFriend = {
             id: Utils.generateId(),
             name,
             city,
+            country, // Store country information
             timezone,
             addedAt: new Date().toISOString()
         };

@@ -59,12 +59,61 @@ const CityData = (function() {
     }
 
     /**
-     * Format city display in search results
+     * Get country code for flag emoji
+     * @param {string} countryName - Full country name
+     * @returns {string} Two-letter country code for flags
+     */
+    function getCountryCodeForFlag(countryName) {
+        const countryMap = {
+            "USA": "US",
+            "UK": "GB",
+            "France": "FR",
+            "Germany": "DE",
+            "Spain": "ES",
+            "Italy": "IT",
+            "Japan": "JP",
+            "Australia": "AU",
+            "Singapore": "SG",
+            "UAE": "AE",
+            "India": "IN",
+            "China": "CN",
+            "Brazil": "BR",
+            "Mexico": "MX",
+            "Egypt": "EG",
+            "Nigeria": "NG",
+            "Russia": "RU",
+            "Canada": "CA"
+        };
+        
+        return countryMap[countryName] || "UN"; // Default to UN flag if not found
+    }
+    
+    /**
+     * Get flag emoji from country name
+     * @param {string} countryName - Full country name
+     * @returns {string} Flag emoji
+     */
+    function getFlagEmoji(countryName) {
+        const countryCode = getCountryCodeForFlag(countryName);
+        
+        // Convert country code to regional indicator symbols
+        // Each letter is represented by a Regional Indicator Symbol, which is
+        // 127397 code points after its ASCII position
+        const codePoints = [...countryCode].map(char => 
+            127397 + char.charCodeAt(0)
+        );
+        
+        return String.fromCodePoint(...codePoints);
+    }
+
+    /**
+     * Format city display in search results with flag
      * @param {Object} city - City object
-     * @returns {string} Formatted city display string
+     * @returns {string} Formatted city display string with flag
      */
     function formatCityDisplay(city) {
-        return `${city.name}, ${city.country} (${city.timezone})`;
+        const flag = getFlagEmoji(city.country);
+        return `${flag} ${city.name}, ${city.country} (${city.timezone})`;
     }
 
     /**
@@ -95,7 +144,8 @@ const CityData = (function() {
         getTimezoneForCity,
         formatCityDisplay,
         getAllCities,
-        parseGmtOffset
+        parseGmtOffset,
+        getFlagEmoji
     };
 })();
 

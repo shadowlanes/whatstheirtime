@@ -18,6 +18,11 @@ const UIManager = (function() {
         const citySuggestions = document.getElementById('city-suggestions');
         const friendNameInput = document.getElementById('friend-name');
         
+        // Create form overlay for modal effect
+        const formOverlay = document.createElement('div');
+        formOverlay.className = 'form-overlay';
+        document.body.appendChild(formOverlay);
+        
         // Load existing friends
         renderAllFriends();
         
@@ -25,6 +30,7 @@ const UIManager = (function() {
         if (addFriendBtn) {
             addFriendBtn.addEventListener('click', () => {
                 friendFormContainer.classList.remove('hidden');
+                formOverlay.classList.add('active');
                 friendNameInput.focus();
             });
         }
@@ -32,10 +38,20 @@ const UIManager = (function() {
         // Cancel adding friend
         if (cancelAddFriendBtn) {
             cancelAddFriendBtn.addEventListener('click', () => {
-                friendFormContainer.classList.add('hidden');
-                friendForm.reset();
-                citySuggestions.style.display = 'none';
+                hideAddFriendForm();
             });
+        }
+        
+        // Close form when clicking overlay
+        formOverlay.addEventListener('click', () => {
+            hideAddFriendForm();
+        });
+        
+        function hideAddFriendForm() {
+            friendFormContainer.classList.add('hidden');
+            formOverlay.classList.remove('active');
+            friendForm.reset();
+            citySuggestions.style.display = 'none';
         }
         
         // City search input
@@ -136,13 +152,19 @@ const UIManager = (function() {
                     renderFriendCard(friend);
                     
                     // Reset form and hide it
-                    friendForm.reset();
-                    friendFormContainer.classList.add('hidden');
+                    hideAddFriendForm();
                 } catch (error) {
                     alert(error.message);
                 }
             });
         }
+        
+        // Handle escape key for closing form
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !friendFormContainer.classList.contains('hidden')) {
+                hideAddFriendForm();
+            }
+        });
         
         // Click outside suggestions to close them
         document.addEventListener('click', (e) => {
@@ -167,12 +189,16 @@ const UIManager = (function() {
         cities.forEach(city => {
             const div = document.createElement('div');
             div.className = 'suggestion-item';
+            
+            // Add flag and city data
             div.textContent = CityData.formatCityDisplay(city);
             div.dataset.cityName = city.name;
             div.dataset.cityCountry = city.country;
             
             div.addEventListener('click', () => {
+                // Use the formatted display with flag in the input
                 inputField.value = `${city.name}, ${city.country}`;
+                inputField.dataset.selectedCountry = city.country; // Store country for flag
                 container.style.display = 'none';
             });
             
@@ -193,10 +219,30 @@ const UIManager = (function() {
         card.className = 'friend-card';
         card.dataset.friendId = friend.id;
         
-        // Add friend's name
+        // Create header with name and flag
+        const cardHeader = document.createElement('div');
+        cardHeader.className = 'friend-card-header';
+        
+        // Get country from the timezone/city info stored in friend object
+        const country = findCountryForCity(friend.city);
+        const flag = country ? CityData.getFlagEmoji(country) : '';
+        
+        // Add friend's name with flag
         const nameHeading = document.createElement('h4');
-        nameHeading.textContent = friend.name;
-        card.appendChild(nameHeading);
+        
+        // Add flag if available
+        if (flag) {
+            const flagSpan = document.createElement('span');
+            flagSpan.className = 'friend-flag';
+            flagSpan.textContent = flag;
+            nameHeading.appendChild(flagSpan);
+            nameHeading.appendChild(document.createTextNode(' ' + friend.name));
+        } else {
+            nameHeading.textContent = friend.name;
+        }
+        
+        cardHeader.appendChild(nameHeading);
+        card.appendChild(cardHeader);
         
         // Add time display
         const timeDisplay = document.createElement('div');
@@ -234,6 +280,17 @@ const UIManager = (function() {
         
         // Store interval ID for cleanup
         timeUpdateIntervals[friend.id] = intervalId;
+    }
+    
+    /**
+     * Find country for a city
+     * @param {string} cityName - City name
+     * @returns {string} Country name or empty string if not found
+     */
+    function findCountryForCity(cityName) {
+        const cities = CityData.getAllCities();
+        const city = cities.find(c => c.name.toLowerCase() === cityName.toLowerCase());
+        return city ? city.country : '';
     }
     
     /**

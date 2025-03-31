@@ -200,11 +200,21 @@ h2 {
 }
 
 .friend-form {
-    background-color: #f8f9fa;
+    background-color: white;
     border-radius: 8px;
     padding: 20px;
     margin-top: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 450px;
+    z-index: 101; /* Higher than the floating button */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .friend-form h4 {
@@ -245,6 +255,8 @@ h2 {
 .suggestion-item {
     padding: 10px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 
 .suggestion-item:hover, .suggestion-item.selected {
@@ -269,4 +281,78 @@ h2 {
 
 #add-friend-btn {
     margin-bottom: 15px;
+}
+
+/* Friend card styles */
+.friend-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.friend-flag {
+    margin-right: 5px;
+    font-size: 1.2em;
+}
+
+/* Floating Action Button styles */
+.floating-action-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 100; /* Ensure it's above other content */
+}
+
+.floating-action-btn:hover {
+    background-color: #3367d6;
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.plus-icon {
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 0;
+}
+
+/* Darken the background when form is shown */
+.form-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.form-overlay.active {
+    display: block;
+}
+
+/* Mobile responsiveness adjustments */
+@media (max-width: 480px) {
+    .floating-action-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .plus-icon {
+        font-size: 28px;
+    }
 }
