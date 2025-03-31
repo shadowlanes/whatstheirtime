@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Their Time</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4285f4">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="images/icon-192x192.png">
+</head> 
+<body> 
+    <div class="container">
+        <header> 
+            <h1>What's Their Time</h1>
+        </header>
+        
+        <main>
+            <div id="welcome-screen" class="hidden">
+                <h2>Welcome, <span id="user-name"></span>!</h2>
+                <div class="install-info">
+                    <button id="install-info-btn" class="secondary-btn">How to install this app</button>
+                    <div id="install-instructions" class="hidden">
+                        <h3>Install this app on your device</h3>
+                        <div class="device-instructions">
+                            <div class="device-section">
+                                <h4>On Android:</h4>
+                                <ol>
+                                    <li>Open this page in Chrome</li>
+                                    <li>Tap the menu icon (⋮)</li>
+                                    <li>Tap "Add to Home Screen" or "Install app"</li>
+                                </ol>
+                            </div>
+                            <div class="device-section">
+                                <h4>On iPhone:</h4>
+                                <ol>
+                                    <li>Open this page in Safari</li>
+                                    <li>Tap the Share icon (📤)</li>
+                                    <li>Tap "Add to Home Screen"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="name-form">
+                <h2>Please introduce yourself</h2>
+                <form id="user-form">
+                    <div class="form-group">
+                        <input type="text" id="name-input" placeholder="Your name" required>
+                    </div>
+                    <button type="submit" class="btn">Continue</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => console.log('Service Worker registered'))
+                .catch(error => console.log('Service Worker registration failed:', error));
+        }
+    </script>
+</body>
+</html>
