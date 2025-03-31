@@ -616,6 +616,10 @@ h3 {
     margin: 0 !important;
 }
 
+.friend-flag{
+    padding: 3px;
+}
+
 /* Ensure proper overlay display */
 .form-overlay {
     display: none;
