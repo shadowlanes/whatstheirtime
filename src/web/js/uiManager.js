@@ -286,12 +286,34 @@ const UIManager = (function() {
         card.className = 'friend-card';
         card.dataset.friendId = friend.id;
         
+        // Add subtle animation delay for staggered effect
+        card.style.animationDelay = `${Math.random() * 0.5}s`;
+        
+        // Get the current hour to add time-dependent styling
+        const friendTime = TimeManager.getCurrentTimeInTimezone(friend.timezone);
+        const hour = friendTime.getHours();
+        
+        // Ghibli-style time-based card styling
+        if (hour >= 5 && hour < 8) {
+            // Dawn - soft oranges and yellows
+            card.style.borderLeft = '3px solid rgba(235, 165, 76, 0.6)';
+        } else if (hour >= 8 && hour < 16) {
+            // Day - sky blue accents
+            card.style.borderLeft = '3px solid rgba(98, 178, 208, 0.6)';
+        } else if (hour >= 16 && hour < 19) {
+            // Dusk - purples and pinks
+            card.style.borderLeft = '3px solid rgba(235, 110, 128, 0.6)';
+        } else {
+            // Night - deep blues
+            card.style.borderLeft = '3px solid rgba(42, 72, 120, 0.6)';
+        }
+        
         // Create header with name and flag
         const cardHeader = document.createElement('div');
         cardHeader.className = 'friend-card-header';
         
         // Get country from the timezone/city info stored in friend object
-        const country = findCountryForCity(friend.city);
+        const country = friend.country || findCountryForCity(friend.city);
         const flag = country ? CityData.getFlagEmoji(country) : '';
         
         // Add friend's name with flag
@@ -303,7 +325,7 @@ const UIManager = (function() {
             flagSpan.className = 'friend-flag';
             flagSpan.textContent = flag;
             nameHeading.appendChild(flagSpan);
-            nameHeading.appendChild(document.createTextNode(' ' + friend.name));
+            nameHeading.appendChild(document.createTextNode(friend.name));
         } else {
             nameHeading.textContent = friend.name;
         }
@@ -325,7 +347,7 @@ const UIManager = (function() {
         // Add delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-friend';
-        deleteBtn.innerHTML = '&times;';
+        deleteBtn.innerHTML = '×';
         deleteBtn.title = 'Remove friend';
         deleteBtn.addEventListener('click', () => {
             if (confirm(`Remove ${friend.name} from your friends list?`)) {

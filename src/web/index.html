@@ -6,9 +6,10 @@
     <title>What's Their Time</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4285f4">
+    <meta name="theme-color" content="#7ea9a7">
     <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
     <link rel="apple-touch-icon" href="images/icon-192x192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head> 
 <body> 
     <div class="container">
@@ -18,27 +19,27 @@
         
         <main>
             <div id="welcome-screen" class="hidden">
-                <h2>Welcome, <span id="user-name"></span>!</h2>
+                <h2>Welcome, <span id="user-name"></span></h2>
                 
                 <div class="friends-section">
-                    <h3>Your Friends' Time</h3>
+                    <h3>Your Friends Across the World</h3>
                     <div id="friends-container" class="friends-container"></div>
                     
                     <div id="friend-form-container" class="friend-form hidden">
-                        <h4>Add a Friend</h4>
+                        <h4>Add a New Friend</h4>
                         <form id="friend-form">
                             <div class="form-group">
                                 <label for="friend-name">Friend's Name</label>
-                                <input type="text" id="friend-name" placeholder="Friend's name" required>
+                                <input type="text" id="friend-name" placeholder="Enter your friend's name" required>
                             </div>
                             <div class="form-group">
                                 <label for="friend-city">City</label>
-                                <input type="text" id="friend-city" placeholder="Start typing a city name..." required>
+                                <input type="text" id="friend-city" placeholder="Search for their city..." required>
                                 <div id="city-suggestions" class="suggestions-container"></div>
                             </div>
                             <div class="form-actions">
                                 <button type="button" class="secondary-btn" id="cancel-add-friend">Cancel</button>
-                                <button type="submit" class="btn">Add</button>
+                                <button type="submit" class="btn">Add Friend</button>
                             </div>
                         </form>
                     </div>
@@ -47,10 +48,10 @@
                 <div class="install-info">
                     <button id="install-info-btn" class="secondary-btn">How to install this app</button>
                     <div id="install-instructions" class="hidden">
-                        <h3>Install this app on your device</h3>
+                        <h3>Install on your device</h3>
                         <div class="device-instructions">
                             <div class="device-section">
-                                <h4>On Android:</h4>
+                                <h4>On Android</h4>
                                 <ol>
                                     <li>Open this page in Chrome</li>
                                     <li>Tap the menu icon (⋮)</li>
@@ -58,7 +59,7 @@
                                 </ol>
                             </div>
                             <div class="device-section">
-                                <h4>On iPhone:</h4>
+                                <h4>On iPhone</h4>
                                 <ol>
                                     <li>Open this page in Safari</li>
                                     <li>Tap the Share icon (📤)</li>
@@ -71,12 +72,12 @@
             </div>
             
             <div id="name-form">
-                <h2>Please introduce yourself</h2>
+                <h2>What shall we call you?</h2>
                 <form id="user-form">
                     <div class="form-group">
-                        <input type="text" id="name-input" placeholder="Your name" required>
+                        <input type="text" id="name-input" placeholder="Enter your name" required>
                     </div>
-                    <button type="submit" class="btn">Continue</button>
+                    <button type="submit" class="btn">Begin Your Journey</button>
                 </form>
             </div>
         </main>
@@ -86,7 +87,7 @@
     <button id="add-friend-btn" class="floating-action-btn" title="Add a friend">
         <span class="plus-icon">+</span>
     </button>
-    
+     
     <script src="./js/cityData.js"></script>
     <script src="./js/utils.js"></script>
     <script src="./js/friendManager.js"></script>
