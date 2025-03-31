@@ -31,6 +31,102 @@ const UIManager = (function() {
     }
     
     /**
+     * Get activity icon based on time and day
+     * @param {Date} dateTime - Current date/time in the friend's timezone
+     * @returns {Object} Activity info with icon and description
+     */
+    function getActivityForTime(dateTime) {
+        const hour = dateTime.getHours();
+        const minute = dateTime.getMinutes();
+        const isWeekend = [0, 6].includes(dateTime.getDay()); // 0 is Sunday, 6 is Saturday
+        const timeValue = hour + (minute / 60); // Convert to decimal time (e.g., 8:30 = 8.5)
+        
+        // Night time (9:30 PM - 6 AM): Sleeping
+        if (timeValue >= 21.5 || timeValue < 6) {
+            return {
+                icon: '💤',
+                description: 'Sleeping',
+                cssClass: 'activity-sleeping'
+            };
+        }
+        
+        // Early morning (6 AM - 7 AM): Waking up
+        if (timeValue >= 6 && timeValue < 7) {
+            return {
+                icon: '🌅',
+                description: 'Waking up',
+                cssClass: 'activity-waking'
+            };
+        }
+        
+        // Breakfast time (7 AM - 8 AM)
+        if (timeValue >= 7 && timeValue < 8) {
+            return {
+                icon: '☕',
+                description: 'Having breakfast',
+                cssClass: 'activity-breakfast'
+            };
+        }
+        
+        // Lunch time (12:30 PM - 1:30 PM)
+        if (timeValue >= 12.5 && timeValue < 13.5) {
+            return {
+                icon: '🍱',
+                description: 'Lunch break',
+                cssClass: 'activity-lunch'
+            };
+        }
+        
+        // Work hours (8 AM - 5:30 PM)
+        if (timeValue >= 8 && timeValue < 17.5) {
+            if (isWeekend) {
+                return {
+                    icon: '🎮',
+                    description: 'Playing games',
+                    cssClass: 'activity-weekend'
+                };
+            }
+            return {
+                icon: '💼',
+                description: 'Working',
+                cssClass: 'activity-working'
+            };
+        }
+        
+        // Evening (5:30 PM - 8:30 PM)
+        if (timeValue >= 17.5 && timeValue < 20.5) {
+            if (isWeekend) {
+                return {
+                    icon: '🎬',
+                    description: 'Watching a movie',
+                    cssClass: 'activity-movie'
+                };
+            }
+            return {
+                icon: '🚶',
+                description: 'Heading home',
+                cssClass: 'activity-evening'
+            };
+        }
+        
+        // Dinner time (8:30 PM - 9:30 PM)
+        if (timeValue >= 20.5 && timeValue < 21.5) {
+            return {
+                icon: '🍽️',
+                description: 'Having dinner',
+                cssClass: 'activity-dinner'
+            };
+        }
+        
+        // Default (should never reach here, but just in case)
+        return {
+            icon: '⏰',
+            description: 'Going about their day',
+            cssClass: 'activity-default'
+        };
+    }
+    
+    /**
      * Render all friends from storage
      */
     function renderAllFriends() {
@@ -295,11 +391,12 @@ const UIManager = (function() {
         // Add subtle animation delay for staggered effect
         card.style.animationDelay = `${Math.random() * 0.5}s`;
         
-        // Get the current hour to add time-dependent styling
+        // Get the current time and activity for friend's timezone
         const friendTime = TimeManager.getCurrentTimeInTimezone(friend.timezone);
         const hour = friendTime.getHours();
+        const activity = getActivityForTime(friendTime);
         
-        // Ghibli-style time-based card styling
+        // Time-based styling
         if (hour >= 5 && hour < 8) {
             // Dawn - soft oranges and yellows
             card.style.borderLeft = '3px solid rgba(235, 165, 76, 0.6)';
@@ -313,6 +410,9 @@ const UIManager = (function() {
             // Night - deep blues
             card.style.borderLeft = '3px solid rgba(42, 72, 120, 0.6)';
         }
+        
+        // Add activity class to the card
+        card.classList.add(activity.cssClass);
         
         // Create header with name and flag
         const cardHeader = document.createElement('div');
@@ -339,12 +439,34 @@ const UIManager = (function() {
         cardHeader.appendChild(nameHeading);
         card.appendChild(cardHeader);
         
-        // Add time display
+        // Add activity indicator with time on the right
+        const activityContainer = document.createElement('div');
+        activityContainer.className = 'friend-activity';
+        
+        // Left side - activity icon and description
+        const activityLeft = document.createElement('div');
+        activityLeft.className = 'activity-left';
+        
+        const activityIcon = document.createElement('span');
+        activityIcon.className = 'activity-icon';
+        activityIcon.textContent = activity.icon;
+        activityLeft.appendChild(activityIcon);
+        
+        const activityText = document.createElement('span');
+        activityText.className = 'activity-description';
+        activityText.textContent = activity.description;
+        activityLeft.appendChild(activityText);
+        
+        activityContainer.appendChild(activityLeft);
+        
+        // Right side - time display
         const timeDisplay = document.createElement('div');
         timeDisplay.className = 'friend-time';
-        card.appendChild(timeDisplay);
+        activityContainer.appendChild(timeDisplay);
         
-        // Add city info
+        card.appendChild(activityContainer);
+        
+        // Add city and timezone info (without background)
         const cityInfo = document.createElement('div');
         cityInfo.className = 'friend-city';
         cityInfo.textContent = `${friend.city} (${friend.timezone})`;
@@ -366,11 +488,11 @@ const UIManager = (function() {
         friendsContainer.appendChild(card);
         
         // Initialize time display
-        updateFriendTime(friend.id, timeDisplay, friend.timezone);
+        updateFriendTime(friend.id, timeDisplay, friend.timezone, activityContainer);
         
         // Schedule regular updates
         const intervalId = setInterval(() => {
-            updateFriendTime(friend.id, timeDisplay, friend.timezone);
+            updateFriendTime(friend.id, timeDisplay, friend.timezone, activityContainer);
         }, 60000); // Update every minute
         
         // Store interval ID for cleanup
@@ -412,14 +534,44 @@ const UIManager = (function() {
     }
     
     /**
-     * Update time display for a friend
+     * Update time display and activity for a friend
      * @param {string} friendId - Friend ID
      * @param {HTMLElement} element - Time display element
      * @param {string} timezone - Friend's timezone
+     * @param {HTMLElement} activityElement - Activity container element
      */
-    function updateFriendTime(friendId, element, timezone) {
+    function updateFriendTime(friendId, element, timezone, activityElement) {
         if (!element) return;
+        
+        const currentTime = TimeManager.getCurrentTimeInTimezone(timezone);
         TimeManager.updateTimeElement(element, timezone);
+        
+        // Update activity if provided
+        if (activityElement) {
+            const activity = getActivityForTime(currentTime);
+            
+            // Update icon
+            const iconElement = activityElement.querySelector('.activity-icon');
+            if (iconElement) iconElement.textContent = activity.icon;
+            
+            // Update description
+            const descElement = activityElement.querySelector('.activity-description');
+            if (descElement) descElement.textContent = activity.description;
+            
+            // Update the activity class on the card
+            const card = document.querySelector(`.friend-card[data-friend-id="${friendId}"]`);
+            if (card) {
+                // Remove all activity classes
+                card.classList.forEach(className => {
+                    if (className.startsWith('activity-')) {
+                        card.classList.remove(className);
+                    }
+                });
+                
+                // Add the current activity class
+                card.classList.add(activity.cssClass);
+            }
+        }
     }
     
     /**

@@ -302,119 +302,7 @@ h3 {
     font-weight: 600;
 }
 
-.friend-time {
-    font-size: 32px;
-    font-weight: 700;
-    margin: 15px 0;
-    color: #eb6e80; /* Ghibli pink */
-    font-family: 'Quicksand', sans-serif;
-    position: relative;
-    display: inline-block;
-    letter-spacing: -0.5px;
-}
-
-.friend-time:before {
-    content: '✧'; /* Ghibli-like star symbol */
-    color: #eba54c; /* Gold/yellow accent */
-    margin-right: 6px;
-    font-size: 20px;
-    opacity: 0.8;
-    vertical-align: middle;
-}
-
-.friend-city {
-    color: #7a9997;
-    font-size: 15px;
-    padding: 6px 12px;
-    border-radius: 12px;
-    display: inline-block;
-    background-color: rgba(242, 249, 248, 0.9);
-    letter-spacing: 0.3px;
-}
-
-/* Complete fix for friend form modal */
-.friend-form {
-    background-color: #fff;
-    border-radius: 24px;
-    padding: 28px;
-    box-shadow: 0 15px 40px rgba(90, 125, 124, 0.3);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 450px;
-    z-index: 200; /* Much higher z-index to ensure it's above everything */
-    max-height: 80vh;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.friend-form h4 {
-    margin-bottom: 22px;
-    text-align: center;
-    font-family: 'Quicksand', sans-serif;
-    color: #5a7d7c;
-    font-size: 1.6rem;
-    font-weight: 600;
-}
-
-.friend-form label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #5a7d7c;
-    font-size: 15px;
-}
-
-/* Fix form overlay to properly display behind the modal */
-.form-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(90, 125, 124, 0.25);
-    z-index: 150; /* Lower than the form but higher than other content */
-    backdrop-filter: blur(1px);
-}
-
-.form-overlay.active {
-    display: block;
-}
-
-/* Ensure suggestions container appears above other content but below modal */
-.suggestions-container {
-    position: absolute;
-    background-color: #fff;
-    border: 1px solid #d5e6e3;
-    border-radius: 15px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 210; /* Higher than the form to show above it */
-    width: 100%;
-    box-shadow: 0 10px 25px rgba(90, 125, 124, 0.2);
-    display: none;
-}
-
-.suggestion-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    transition: all 0.25s;
-    border-bottom: 1px solid rgba(213, 230, 227, 0.5);
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover, .suggestion-item.selected {
-    background-color: rgba(242, 249, 248, 0.9);
-}
-
+/* Fix delete button position to be in top-right corner */
 .delete-friend {
     position: absolute;
     top: 15px;
@@ -433,6 +321,7 @@ h3 {
     opacity: 0;
     transition: all 0.3s;
     transform: scale(0.8);
+    z-index: 5; /* Ensure it's above other elements */
 }
 
 .friend-card:hover .delete-friend {
@@ -445,73 +334,134 @@ h3 {
     transform: rotate(90deg);
 }
 
-/* Friend card styles */
-.friend-card-header {
+/* Friend activity styles - updated for side-by-side layout */
+.friend-activity {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
+    justify-content: space-between; /* Space between activity and time */
+    margin-bottom: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 8px 12px;
+    border-radius: 15px;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease;
 }
 
-.friend-flag {
+.activity-left {
+    display: flex;
+    align-items: center;
+}
+
+.activity-icon {
+    font-size: 1.6rem;
     margin-right: 10px;
-    font-size: 1.6em;
-    opacity: 0.9;
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
-}
-
-/* Floating Action Button styles */
-.floating-action-btn {
-    position: fixed;
-    bottom: 35px;
-    right: 35px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #eb6e80; /* Ghibli pink */
-    color: white;
-    border: none;
-    box-shadow: 0 5px 20px rgba(235, 110, 128, 0.4);
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.4s ease;
-    z-index: 100;
-    font-size: 30px;
-    font-weight: 400;
+    animation: gentle-bounce 2s infinite ease-in-out;
 }
 
-.floating-action-btn:hover {
-    background-color: #e05c70;
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(235, 110, 128, 0.5);
+.activity-description {
+    color: #5a7d7c;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
-.floating-action-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 15px rgba(235, 110, 128, 0.4);
+/* Updated time styling to fit inside activity bar */
+.friend-time {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #eb6e80; /* Ghibli pink */
+    font-family: 'Quicksand', sans-serif;
+    position: relative;
+    display: inline-block;
+    letter-spacing: -0.5px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(126, 169, 167, 0.2);
 }
 
-.plus-icon {
-    font-size: 32px;
-    line-height: 0;
+/* Remove the star symbol since we've moved the time */
+.friend-time:before {
+    content: none;
 }
 
-/* Darken the background when form is shown */
-.form-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(90, 125, 124, 0.25);
-    /* z-index: 20; */ /* Keep lower than the form's z-index */
-    /* backdrop-filter: blur(1px); */ /* Reduce blur */
+/* City info styles - removed background */
+.friend-city {
+    color: #7a9997;
+    font-size: 15px;
+    padding: 6px 12px 6px 0;
+    border-radius: 0;
+    display: inline-block;
+    background-color: transparent;
+    letter-spacing: 0.3px;
+    margin-top: -5px;
+    margin-bottom: 5px;
 }
 
-.form-overlay.active {
-    display: block;
+/* Activity-specific styling */
+.activity-sleeping .friend-activity {
+    background-color: rgba(42, 72, 120, 0.1);
+    border-left: 3px solid rgba(42, 72, 120, 0.5);
+}
+
+.activity-waking .friend-activity {
+    background-color: rgba(235, 165, 76, 0.1);
+    border-left: 3px solid rgba(235, 165, 76, 0.5);
+}
+
+.activity-breakfast .friend-activity {
+    background-color: rgba(235, 165, 76, 0.1);
+    border-left: 3px solid rgba(235, 165, 76, 0.5);
+}
+
+.activity-working .friend-activity {
+    background-color: rgba(98, 178, 208, 0.1);
+    border-left: 3px solid rgba(98, 178, 208, 0.5);
+}
+
+.activity-lunch .friend-activity {
+    background-color: rgba(126, 169, 167, 0.1);
+    border-left: 3px solid rgba(126, 169, 167, 0.5);
+}
+
+.activity-evening .friend-activity,
+.activity-movie .friend-activity {
+    background-color: rgba(235, 110, 128, 0.1);
+    border-left: 3px solid rgba(235, 110, 128, 0.5);
+}
+
+.activity-dinner .friend-activity {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 3px solid rgba(255, 193, 7, 0.5);
+}
+
+.activity-weekend .friend-activity {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-left: 3px solid rgba(156, 39, 176, 0.5);
+}
+
+/* Animation for activity icons */
+@keyframes gentle-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .friend-activity {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .friend-time {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        margin-top: 8px;
+        font-size: 1.2rem;
+    }
 }
 
 /* Mobile responsiveness adjustments */
