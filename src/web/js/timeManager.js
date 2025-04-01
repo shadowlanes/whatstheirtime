@@ -42,6 +42,7 @@ const TimeManager = (function() {
         try {
             // Use tzName directly with moment-timezone
             if (tzName && moment.tz.zone(tzName)) {
+                // Convert moment object to Date object properly to preserve timezone
                 return moment().tz(tzName).toDate();
             }
             
@@ -60,6 +61,14 @@ const TimeManager = (function() {
      * @returns {string} Formatted time string
      */
     function formatTimeForDisplay(date) {
+        // When formatting time from a Date object that came from moment.tz().toDate(),
+        // we need to use moment again to preserve the timezone info
+        if (date._isAMomentObject) {
+            // If it's a moment object, format it directly
+            return date.format('hh:mm A');
+        }
+        
+        // Otherwise use locale time formatting (for Date objects)
         return date.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
@@ -73,6 +82,12 @@ const TimeManager = (function() {
      * @returns {string} Formatted time string
      */
     function getFormattedTimeForTimezone(tzName) {
+        // Use moment directly for formatting to preserve timezone info
+        if (tzName && moment.tz.zone(tzName)) {
+            return moment().tz(tzName).format('hh:mm A');
+        }
+        
+        // Fall back to standard method if tzName is invalid
         const time = getCurrentTimeInTimezone(tzName);
         return formatTimeForDisplay(time);
     }

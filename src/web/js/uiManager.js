@@ -476,6 +476,24 @@ const UIManager = (function() {
             card.dataset.tzName = friend.tzName;
         }
         
+        // Make sure we have a valid tzName for this friend
+        if (!friend.tzName) {
+            console.error(`Friend ${friend.name} has no tzName, time display may be incorrect`);
+            // Try to find tzName from city data as backup
+            const cityData = CityData.getAllCities().find(c => 
+                c.name.toLowerCase() === friend.city.toLowerCase());
+            if (cityData && cityData.tzName) {
+                friend.tzName = cityData.tzName;
+                // Update in storage
+                const friends = FriendManager.getAllFriends();
+                const friendIndex = friends.findIndex(f => f.id === friend.id);
+                if (friendIndex !== -1) {
+                    friends[friendIndex].tzName = cityData.tzName;
+                    Utils.storeData('friendsData', friends);
+                }
+            }
+        }
+        
         // Add subtle animation delay for staggered effect
         card.style.animationDelay = `${Math.random() * 0.5}s`;
         
@@ -550,6 +568,7 @@ const UIManager = (function() {
         // Right side - time display
         const timeDisplay = document.createElement('div');
         timeDisplay.className = 'friend-time';
+        timeDisplay.textContent = TimeManager.getFormattedTimeForTimezone(friend.tzName);
         activityContainer.appendChild(timeDisplay);
         
         card.appendChild(activityContainer);
@@ -624,12 +643,14 @@ const UIManager = (function() {
     function updateFriendTime(friendId, element, activityElement, tzName) {
         if (!element) return;
         
-        // Use only tzName for time calculations
+        // Directly use TimeManager.getFormattedTimeForTimezone for more reliable formatting
+        element.textContent = TimeManager.getFormattedTimeForTimezone(tzName);
+        
+        // Get current time to update activity
         const currentTime = TimeManager.getCurrentTimeInTimezone(tzName);
-        TimeManager.updateTimeElement(element, tzName);
         
         // Update activity if provided
-        if (activityElement) {
+        if (activityElement && currentTime) {
             const activity = getActivityForTime(currentTime);
             
             // Update icon
