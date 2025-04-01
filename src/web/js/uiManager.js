@@ -13,9 +13,9 @@ const UIManager = (function() {
      */
     function sortFriendsByTime(friends) {
         return [...friends].sort((a, b) => {
-            // Get current time for each friend's timezone
-            const timeA = TimeManager.getCurrentTimeInTimezone(a.timezone);
-            const timeB = TimeManager.getCurrentTimeInTimezone(b.timezone);
+            // Get current time for each friend's timezone using tzName only
+            const timeA = TimeManager.getCurrentTimeInTimezone(a.tzName);
+            const timeB = TimeManager.getCurrentTimeInTimezone(b.tzName);
             
             // Compare hours first (0-23)
             const hourA = timeA.getHours();
@@ -387,17 +387,18 @@ const UIManager = (function() {
                 // Extract city name from input (format is "City, Country")
                 const cityName = cityInput.split(',')[0].trim();
                 
-                // Get timezone for the city
-                const timezone = CityData.getTimezoneForCity(cityName);
+                // Get complete city data with timezone and tzName
+                const cities = CityData.getAllCities();
+                const cityData = cities.find(c => c.name.toLowerCase() === cityName.toLowerCase());
                 
-                if (!timezone) {
+                if (!cityData) {
                     alert('Please select a valid city from the suggestions');
                     return;
                 }
                 
                 try {
-                    // Add the friend
-                    const friend = FriendManager.addFriend(friendName, cityName, timezone);
+                    // Add the friend with both timezone and tzName
+                    const friend = FriendManager.addFriend(friendName, cityName, cityData.timezone, cityData.tzName);
                     
                     // Add the friend to the UI
                     renderFriendCard(friend);
@@ -437,7 +438,6 @@ const UIManager = (function() {
     function renderCitySuggestions(cities, container, inputField) {
         // Clear previous suggestions
         container.innerHTML = '';
-        
         cities.forEach(city => {
             const div = document.createElement('div');
             div.className = 'suggestion-item';
@@ -471,11 +471,16 @@ const UIManager = (function() {
         card.className = 'friend-card';
         card.dataset.friendId = friend.id;
         
+        // Store tzName as a data attribute for easy access
+        if (friend.tzName) {
+            card.dataset.tzName = friend.tzName;
+        }
+        
         // Add subtle animation delay for staggered effect
         card.style.animationDelay = `${Math.random() * 0.5}s`;
         
-        // Get the current time and activity for friend's timezone
-        const friendTime = TimeManager.getCurrentTimeInTimezone(friend.timezone);
+        // Get the current time and activity for friend's timezone using tzName
+        const friendTime = TimeManager.getCurrentTimeInTimezone(friend.tzName);
         const hour = friendTime.getHours();
         const activity = getActivityForTime(friendTime);
         
@@ -501,8 +506,8 @@ const UIManager = (function() {
         const cardHeader = document.createElement('div');
         cardHeader.className = 'friend-card-header';
         
-        // Get country from the timezone/city info stored in friend object
-        const country = friend.country || findCountryForCity(friend.city);
+        // Get country from the friend object
+        const country = friend.country || '';
         const flag = country ? CityData.getFlagEmoji(country) : '';
         
         // Add friend's name with flag
@@ -552,7 +557,9 @@ const UIManager = (function() {
         // Add city and timezone info (without background)
         const cityInfo = document.createElement('div');
         cityInfo.className = 'friend-city';
-        cityInfo.textContent = `${friend.city} (${friend.timezone})`;
+        
+        // Include tzName in display
+        cityInfo.textContent = `${friend.city} (${friend.tzName})`;
         card.appendChild(cityInfo);
         
         // Add delete button
@@ -571,26 +578,15 @@ const UIManager = (function() {
         friendsContainer.appendChild(card);
         
         // Initialize time display
-        updateFriendTime(friend.id, timeDisplay, friend.timezone, activityContainer);
+        updateFriendTime(friend.id, timeDisplay, activityContainer, friend.tzName);
         
         // Schedule regular updates
         const intervalId = setInterval(() => {
-            updateFriendTime(friend.id, timeDisplay, friend.timezone, activityContainer);
+            updateFriendTime(friend.id, timeDisplay, activityContainer, friend.tzName);
         }, 60000); // Update every minute
         
         // Store interval ID for cleanup
         timeUpdateIntervals[friend.id] = intervalId;
-    }
-    
-    /**
-     * Find country for a city
-     * @param {string} cityName - City name
-     * @returns {string} Country name or empty string if not found
-     */
-    function findCountryForCity(cityName) {
-        const cities = CityData.getAllCities();
-        const city = cities.find(c => c.name.toLowerCase() === cityName.toLowerCase());
-        return city ? city.country : '';
     }
     
     /**
@@ -600,7 +596,6 @@ const UIManager = (function() {
     function removeFriendCard(friendId) {
         // Remove from data
         const success = FriendManager.removeFriend(friendId);
-        
         if (success) {
             // Clear update interval
             if (timeUpdateIntervals[friendId]) {
@@ -623,14 +618,15 @@ const UIManager = (function() {
      * Update time display and activity for a friend
      * @param {string} friendId - Friend ID
      * @param {HTMLElement} element - Time display element
-     * @param {string} timezone - Friend's timezone
      * @param {HTMLElement} activityElement - Activity container element
+     * @param {string} tzName - IANA timezone name
      */
-    function updateFriendTime(friendId, element, timezone, activityElement) {
+    function updateFriendTime(friendId, element, activityElement, tzName) {
         if (!element) return;
         
-        const currentTime = TimeManager.getCurrentTimeInTimezone(timezone);
-        TimeManager.updateTimeElement(element, timezone);
+        // Use only tzName for time calculations
+        const currentTime = TimeManager.getCurrentTimeInTimezone(tzName);
+        TimeManager.updateTimeElement(element, tzName);
         
         // Update activity if provided
         if (activityElement) {

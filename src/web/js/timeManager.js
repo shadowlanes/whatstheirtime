@@ -4,32 +4,53 @@
 
 const TimeManager = (function() {
     /**
-     * Get current time in a specific GMT timezone
-     * @param {string} gmtTimezone - The timezone in GMT format (e.g., "GMT+5.5")
+     * Get the current user's timezone offset in minutes
+     * @returns {number} Current timezone offset in minutes
+     */
+    function getCurrentTimezoneOffset() {
+        // Get the local time offset in minutes
+        // Note: getTimezoneOffset() returns minutes WEST of UTC, so negative for timezones east of UTC
+        return new Date().getTimezoneOffset();
+    }
+
+    /**
+     * Get the timezone offset string in GMT format (e.g., "GMT-5")
+     * @returns {string} Current timezone in GMT format
+     */
+    function getCurrentTimezoneString() {
+        const offsetMinutes = getCurrentTimezoneOffset();
+        // Convert to hours (negative because getTimezoneOffset() returns minutes west of UTC)
+        const offsetHours = -(offsetMinutes / 60);
+        const sign = offsetHours >= 0 ? '+' : '-';
+        const absoluteHours = Math.abs(offsetHours);
+        const hours = Math.floor(absoluteHours);
+        const minutes = Math.round((absoluteHours - hours) * 60);
+        
+        if (minutes === 0) {
+            return `GMT${sign}${hours}`;
+        } else {
+            return `GMT${sign}${hours}.${minutes}`;
+        }
+    }
+    
+    /**
+     * Get current time in a specific timezone
+     * @param {string} tzName - IANA timezone name (e.g., "America/New_York")
      * @returns {Date} Current date/time in that timezone
      */
-    function getCurrentTimeInTimezone(gmtTimezone) {
-        const date = new Date();
-        
+    function getCurrentTimeInTimezone(tzName) {
         try {
-            // Get the local time offset in minutes
-            const localOffset = date.getTimezoneOffset();
+            // Use tzName directly with moment-timezone
+            if (tzName && moment.tz.zone(tzName)) {
+                return moment().tz(tzName).toDate();
+            }
             
-            // Parse the GMT offset from the timezone string
-            const targetOffset = CityData.parseGmtOffset(gmtTimezone);
-            
-            // Calculate the time difference in minutes
-            // Note: getTimezoneOffset() returns negative minutes for timezones ahead of UTC
-            const diff = -localOffset - targetOffset;
-            
-            // Adjust the time by adding the difference in milliseconds
-            const ms = date.getTime() + (diff * 60 * 1000);
-            
-            // Create a new date with the adjusted time
-            return new Date(ms);
+            // If tzName is not valid, fall back to local time
+            console.warn(`Invalid timezone name: ${tzName}, falling back to local time`);
+            return new Date();
         } catch (error) {
-            console.error(`Error calculating time for timezone ${gmtTimezone}:`, error);
-            return date; // Return local time as fallback
+            console.error(`Error calculating time for timezone ${tzName}:`, error);
+            return new Date(); // Return local time as fallback
         }
     }
     
@@ -47,26 +68,28 @@ const TimeManager = (function() {
     }
     
     /**
-     * Get formatted time for a GMT timezone
-     * @param {string} gmtTimezone - The timezone in GMT format
+     * Get formatted time for a timezone
+     * @param {string} tzName - IANA timezone name
      * @returns {string} Formatted time string
      */
-    function getFormattedTimeForTimezone(gmtTimezone) {
-        const time = getCurrentTimeInTimezone(gmtTimezone);
+    function getFormattedTimeForTimezone(tzName) {
+        const time = getCurrentTimeInTimezone(tzName);
         return formatTimeForDisplay(time);
     }
     
     /**
      * Update time element with current time for a timezone
      * @param {HTMLElement} element - The element to update
-     * @param {string} gmtTimezone - The timezone in GMT format
+     * @param {string} tzName - IANA timezone name
      */
-    function updateTimeElement(element, gmtTimezone) {
+    function updateTimeElement(element, tzName) {
         if (!element) return;
-        element.textContent = getFormattedTimeForTimezone(gmtTimezone);
+        element.textContent = getFormattedTimeForTimezone(tzName);
     }
     
     return {
+        getCurrentTimezoneOffset,
+        getCurrentTimezoneString,
         getCurrentTimeInTimezone,
         formatTimeForDisplay,
         getFormattedTimeForTimezone,

@@ -18,9 +18,10 @@ const FriendManager = (function() {
      * @param {string} name - Friend's name
      * @param {string} city - Friend's city
      * @param {string} timezone - Friend's timezone
+     * @param {string} tzName - Friend's timezone IANA name
      * @returns {Object} The newly added friend object
      */
-    function addFriend(name, city, timezone) {
+    function addFriend(name, city, timezone, tzName) {
         const friends = getAllFriends();
         
         // Check for duplicate name
@@ -33,12 +34,20 @@ const FriendManager = (function() {
         const cityData = cities.find(c => c.name.toLowerCase() === city.toLowerCase());
         const country = cityData ? cityData.country : '';
         
+        // Make sure we have a valid tzName
+        if (!tzName && cityData && cityData.tzName) {
+            tzName = cityData.tzName;
+        } else if (!tzName) {
+            console.warn(`No tzName provided for ${name} in ${city}, timezone functionality may be limited`);
+        }
+        
         const newFriend = {
             id: Utils.generateId(),
             name,
             city,
-            country, // Store country information
+            country,
             timezone,
+            tzName,
             addedAt: new Date().toISOString()
         };
         
