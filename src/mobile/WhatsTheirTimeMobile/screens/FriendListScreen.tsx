@@ -89,14 +89,19 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const closeAddModal = () => {
+    // Dismiss keyboard first to avoid any re-render issues
+    Keyboard.dismiss();
+    
     setAddModalVisible(false);
     
-    // Reset all fields
-    setNewFriendName('');
-    setSelectedCity(null);
-    setSearchQuery('');
-    setSearchResults([]);
-    setAddingStep('name');
+    // Reset all fields after the modal is fully closed
+    setTimeout(() => {
+      setNewFriendName('');
+      setSelectedCity(null);
+      setSearchQuery('');
+      setSearchResults([]);
+      setAddingStep('name');
+    }, 300);
   };
 
   const proceedToLocationStep = () => {
@@ -278,147 +283,6 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     </View>
   );
 
-  // Full-screen add friend modal with integrated city search
-  const AddFriendModal = () => (
-    <Modal
-      visible={addModalVisible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={closeAddModal}
-    >
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalContainer}
-      >
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>
-            {addingStep === 'name' ? 'Add a Friend' : `Choose Location for ${newFriendName}`}
-          </Text>
-          <TouchableOpacity onPress={closeAddModal} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {addingStep === 'name' ? (
-          // Name input step
-          <View style={styles.modalBody}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Friend's Name</Text>
-              <TextInput
-                ref={nameInputRef}
-                style={styles.textInput}
-                placeholder="Enter name"
-                placeholderTextColor="#777"
-                value={newFriendName}
-                onChangeText={setNewFriendName}
-                returnKeyType="next"
-                onSubmitEditing={proceedToLocationStep}
-                autoFocus={true}
-                blurOnSubmit={false}
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={[
-                styles.nextButton, 
-                !newFriendName.trim() ? styles.buttonDisabled : {}
-              ]}
-              onPress={proceedToLocationStep}
-              disabled={!newFriendName.trim()}
-            >
-              <Text style={styles.buttonText}>Continue to Location</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          // Location search step
-          <View style={styles.modalBody}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Where is {newFriendName} located?</Text>
-              
-              {selectedCity ? (
-                // Display selected city
-                <View style={styles.selectedCityContainer}>
-                  <View style={styles.selectedCityContent}>
-                    <Text style={styles.flagText}>{getFlag(selectedCity.country)}</Text>
-                    <View>
-                      <Text style={styles.selectedCityName}>{selectedCity.name}, {selectedCity.country}</Text>
-                      <Text style={styles.selectedCityTimezone}>{selectedCity.timezone}</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      setSelectedCity(null);
-                      setSearchQuery('');
-                      searchInputRef.current?.focus();
-                    }} 
-                    style={styles.changeCityButton}
-                  >
-                    <Text style={styles.changeCityText}>Change</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                // City search interface
-                <View>
-                  <TextInput
-                    ref={searchInputRef}
-                    style={styles.searchInput}
-                    placeholder="Search for a city..."
-                    placeholderTextColor="#777"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    returnKeyType="search"
-                    autoFocus={true}
-                  />
-                  
-                  {isSearching ? (
-                    <ActivityIndicator size="large" color="#f4511e" style={styles.loader} />
-                  ) : searchResults.length > 0 ? (
-                    <FlatList
-                      data={searchResults}
-                      keyExtractor={(item) => item.id}
-                      renderItem={renderCityItem}
-                      style={styles.searchResultsList}
-                      nestedScrollEnabled={true}
-                    />
-                  ) : searchQuery.length >= 2 ? (
-                    <Text style={styles.emptyResultsText}>No cities found matching your search</Text>
-                  ) : searchQuery.length > 0 ? (
-                    <Text style={styles.emptyResultsText}>Enter at least 2 characters to search</Text>
-                  ) : null}
-                </View>
-              )}
-            </View>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={returnToNameStep}
-              >
-                <Text style={styles.backButtonText}>Back</Text>
-              </TouchableOpacity>
-
-              {selectedCity ? (
-                <TouchableOpacity 
-                  style={styles.saveButton}
-                  onPress={saveFriend}
-                >
-                  <Text style={styles.buttonText}>Add Friend</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity 
-                  style={[styles.saveButton, styles.buttonDisabled]}
-                  disabled={true}
-                >
-                  <Text style={styles.buttonText}>Add Friend</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -451,7 +315,144 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
       
-      <AddFriendModal />
+      <Modal
+        visible={addModalVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={closeAddModal}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {addingStep === 'name' ? 'Add a Friend' : `Choose Location for ${newFriendName}`}
+            </Text>
+            <TouchableOpacity onPress={closeAddModal} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {addingStep === 'name' ? (
+            // Name input step
+            <View style={styles.modalBody}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Friend's Name</Text>
+                <TextInput
+                  ref={nameInputRef}
+                  style={styles.textInput}
+                  placeholder="Enter name"
+                  placeholderTextColor="#777"
+                  value={newFriendName}
+                  onChangeText={setNewFriendName}
+                  returnKeyType="next"
+                  onSubmitEditing={proceedToLocationStep}
+                  autoFocus={true}
+                  blurOnSubmit={false}
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[
+                  styles.nextButton, 
+                  !newFriendName.trim() ? styles.buttonDisabled : {}
+                ]}
+                onPress={proceedToLocationStep}
+                disabled={!newFriendName.trim()}
+              >
+                <Text style={styles.buttonText}>Continue to Location</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // Location search step
+            <View style={styles.modalBody}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Where is {newFriendName} located?</Text>
+                
+                {selectedCity ? (
+                  // Display selected city
+                  <View style={styles.selectedCityContainer}>
+                    <View style={styles.selectedCityContent}>
+                      <Text style={styles.flagText}>{getFlag(selectedCity.country)}</Text>
+                      <View>
+                        <Text style={styles.selectedCityName}>{selectedCity.name}, {selectedCity.country}</Text>
+                        <Text style={styles.selectedCityTimezone}>{selectedCity.timezone}</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        setSelectedCity(null);
+                        setSearchQuery('');
+                        searchInputRef.current?.focus();
+                      }} 
+                      style={styles.changeCityButton}
+                    >
+                      <Text style={styles.changeCityText}>Change</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  // City search interface
+                  <View>
+                    <TextInput
+                      ref={searchInputRef}
+                      style={styles.searchInput}
+                      placeholder="Search for a city..."
+                      placeholderTextColor="#777"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      returnKeyType="search"
+                      autoFocus={true}
+                    />
+                    
+                    {isSearching ? (
+                      <ActivityIndicator size="large" color="#f4511e" style={styles.loader} />
+                    ) : searchResults.length > 0 ? (
+                      <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderCityItem}
+                        style={styles.searchResultsList}
+                        nestedScrollEnabled={true}
+                      />
+                    ) : searchQuery.length >= 2 ? (
+                      <Text style={styles.emptyResultsText}>No cities found matching your search</Text>
+                    ) : searchQuery.length > 0 ? (
+                      <Text style={styles.emptyResultsText}>Enter at least 2 characters to search</Text>
+                    ) : null}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={returnToNameStep}
+                >
+                  <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
+
+                {selectedCity ? (
+                  <TouchableOpacity 
+                    style={styles.saveButton}
+                    onPress={saveFriend}
+                  >
+                    <Text style={styles.buttonText}>Add Friend</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={[styles.saveButton, styles.buttonDisabled]}
+                    disabled={true}
+                  >
+                    <Text style={styles.buttonText}>Add Friend</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
