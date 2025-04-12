@@ -14,7 +14,9 @@ import {
   Platform,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  ActivityIndicator,
+  Modal
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -24,7 +26,7 @@ import { RootStackParamList } from '../App';
 import FriendManager, { Friend } from '../models/Friend';
 import { getFormattedTimeDifference, getDayDifference } from '../utils/TimeManager';
 import { TimeOfDay, timeOfDayColors, getTimeOfDay, getHourInTimezone } from '../utils/TimeOfDayUtil';
-import { getFlag } from '../models/CityData';
+import { getFlag, searchCities, City } from '../models/CityData';
 
 type FriendListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendList'>;
 
@@ -36,13 +38,15 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [addPanelVisible, setAddPanelVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
   const [newFriendName, setNewFriendName] = useState('');
-  const [selectedCity, setSelectedCity] = useState<any>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [addingStep, setAddingStep] = useState<'name' | 'location'>('name');
-  const slideAnim = useState(new Animated.Value(-600))[0];
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<City[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const nameInputRef = useRef<TextInput>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const friendManager = FriendManager.getInstance();
   const screenWidth = Dimensions.get('window').width;
 
@@ -71,50 +75,28 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     loadFriends();
   };
 
-  const toggleAddPanel = () => {
-    if (!addPanelVisible) {
-      // Open the panel
-      setAddPanelVisible(true);
-      setAddingStep('name');
-      setNewFriendName('');
-      setSelectedCity(null);
-      
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: -100,
-          useNativeDriver: false,
-          friction: 8,
-          tension: 65,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.5,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start();
-      
-      // Focus the name input after animation completes
-      setTimeout(() => nameInputRef.current?.focus(), 300);
-    } else {
-      // Close the panel
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -600,
-          duration: 300,
-          useNativeDriver: false,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start(() => {
-        setAddPanelVisible(false);
-        setNewFriendName('');
-        setSelectedCity(null);
-        setAddingStep('name');
-      });
-    }
+  const openAddModal = () => {
+    // Reset all state for the add flow
+    setAddModalVisible(true);
+    setAddingStep('name');
+    setNewFriendName('');
+    setSelectedCity(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    
+    // Wait for modal to appear before focusing input
+    setTimeout(() => nameInputRef.current?.focus(), 300);
+  };
+
+  const closeAddModal = () => {
+    setAddModalVisible(false);
+    
+    // Reset all fields
+    setNewFriendName('');
+    setSelectedCity(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    setAddingStep('name');
   };
 
   const proceedToLocationStep = () => {
@@ -123,36 +105,49 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
     setAddingStep('location');
+    // Wait for the step transition then focus the search input
+    setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
   const returnToNameStep = () => {
     setAddingStep('name');
+    setSearchQuery('');
+    setSearchResults([]);
+    // Wait for the step transition then focus the name input
+    setTimeout(() => nameInputRef.current?.focus(), 100);
   };
 
-  const openCitySearch = () => {
-    navigation.navigate('CitySearch', {
-      onSelect: (city) => {
-        setSelectedCity(city);
-        // When we have both name and city, we're ready to save
-        if (newFriendName.trim()) {
-          saveFriend(newFriendName.trim(), city);
-        }
-      },
-    });
+  // Handle city search
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      setIsSearching(true);
+      const delayDebounceFn = setTimeout(() => {
+        const results = searchCities(searchQuery);
+        setSearchResults(results);
+        setIsSearching(false);
+      }, 300);
+      
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const handleCitySelect = (city: City) => {
+    setSelectedCity(city);
+    setSearchQuery('');
+    setSearchResults([]);
+    Keyboard.dismiss();
   };
 
-  const saveFriend = async (name = newFriendName.trim(), city = selectedCity) => {
-    if (name === '' || !city) {
+  const saveFriend = async () => {
+    if (newFriendName.trim() === '' || !selectedCity) {
       return;
     }
 
-    await friendManager.addFriend(name, city);
+    await friendManager.addFriend(newFriendName.trim(), selectedCity);
     loadFriends();
-    toggleAddPanel(); 
-  };
-
-  const addNewFriend = () => {
-    toggleAddPanel();
+    closeAddModal();
   };
 
   const renderFriendItem = ({ item }: { item: Friend }) => {
@@ -196,7 +191,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  // New grid layout for the friend list
+  // Grid layout for the friend list
   const renderFriendGrid = ({ item, index }: { item: Friend, index: number }) => {
     const timeDifference = getFormattedTimeDifference(item.city);
     const dayDifference = getDayDifference(item.city);
@@ -246,116 +241,24 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  // Add Friend Widget Panel
-  const AddFriendPanel = useCallback(() => (
-    <>
-      <TouchableWithoutFeedback onPress={toggleAddPanel}>
-        <Animated.View style={[styles.overlay, { opacity: opacityAnim }]} />
-      </TouchableWithoutFeedback>
-      
-      <Animated.View style={[styles.addPanel, { transform: [{ translateY: slideAnim }] }]}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.addPanelContent}
-        >
-          <View style={styles.addPanelHeader}>
-            <Text style={styles.addPanelTitle}>
-              {addingStep === 'name' ? 'Add a Friend' : `Choose Location for ${newFriendName}`}
-            </Text>
-            <TouchableOpacity onPress={toggleAddPanel} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {addingStep === 'name' ? (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Friend's Name</Text>
-                <TextInput
-                  ref={nameInputRef}
-                  style={styles.textInput}
-                  placeholder="Enter name"
-                  placeholderTextColor="#777"
-                  value={newFriendName}
-                  onChangeText={setNewFriendName}
-                  returnKeyType="next"
-                  onSubmitEditing={proceedToLocationStep}
-                  autoFocus={true}
-                  blurOnSubmit={false}
-                />
-              </View>
+  // Render city search results
+  const renderCityItem = ({ item }: { item: City }) => (
+    <TouchableOpacity
+      style={styles.cityItem}
+      onPress={() => handleCitySelect(item)}
+    >
+      <View style={styles.cityInfoContainer}>
+        <Text style={styles.flagText}>{getFlag(item.country)}</Text>
+        <View style={styles.cityTextContainer}>
+          <Text style={styles.cityName}>{item.name}, {item.country}</Text>
+          <Text style={styles.timezone}>{item.timezone}</Text>
+        </View>
+      </View>
+      <Text style={styles.selectText}>Select</Text>
+    </TouchableOpacity>
+  );
 
-              <TouchableOpacity 
-                style={[
-                  styles.nextButton, 
-                  !newFriendName.trim() ? styles.buttonDisabled : {}
-                ]}
-                onPress={proceedToLocationStep}
-                disabled={!newFriendName.trim()}
-              >
-                <Text style={styles.buttonText}>Continue to Location</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Where is {newFriendName} located?</Text>
-                {selectedCity ? (
-                  <View style={styles.selectedCityContainer}>
-                    <View style={styles.selectedCityContent}>
-                      <Text style={styles.flagText}>{getFlag(selectedCity.country)}</Text>
-                      <View>
-                        <Text style={styles.selectedCityName}>{selectedCity.name}, {selectedCity.country}</Text>
-                        <Text style={styles.selectedCityTimezone}>{selectedCity.timezone}</Text>
-                      </View>
-                    </View>
-                    <TouchableOpacity onPress={openCitySearch} style={styles.changeCityButton}>
-                      <Text style={styles.changeCityText}>Change</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity 
-                    style={styles.locationSelector}
-                    onPress={openCitySearch}
-                  >
-                    <Text style={styles.locationPlaceholder}>
-                      Tap to select a city
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View style={styles.buttonRow}>
-                <TouchableOpacity 
-                  style={styles.backButton}
-                  onPress={returnToNameStep}
-                >
-                  <Text style={styles.backButtonText}>Back</Text>
-                </TouchableOpacity>
-
-                {selectedCity ? (
-                  <TouchableOpacity 
-                    style={styles.saveButton}
-                    onPress={() => saveFriend()}
-                  >
-                    <Text style={styles.buttonText}>Add Friend</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity 
-                    style={[styles.saveButton, styles.buttonDisabled]}
-                    disabled={true}
-                  >
-                    <Text style={styles.buttonText}>Add Friend</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          )}
-        </KeyboardAvoidingView>
-      </Animated.View>
-    </>
-  ), [addingStep, newFriendName, selectedCity, opacityAnim, slideAnim]);
-
+  // Welcome Widget for empty state
   const WelcomeWidget = () => (
     <View style={styles.welcomeContainer}>
       <Text style={styles.welcomeTitle}>Welcome to What's Their Time</Text>
@@ -365,7 +268,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
       </Text>
       <TouchableOpacity 
         style={styles.welcomeButton}
-        onPress={addNewFriend}
+        onPress={openAddModal}
       >
         <Text style={styles.welcomeButtonText}>Add Friend Now</Text>
       </TouchableOpacity>
@@ -373,6 +276,147 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         Tip: You can add as many contacts as you need and quickly check their local time.
       </Text>
     </View>
+  );
+
+  // Full-screen add friend modal with integrated city search
+  const AddFriendModal = () => (
+    <Modal
+      visible={addModalVisible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={closeAddModal}
+    >
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.modalContainer}
+      >
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>
+            {addingStep === 'name' ? 'Add a Friend' : `Choose Location for ${newFriendName}`}
+          </Text>
+          <TouchableOpacity onPress={closeAddModal} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {addingStep === 'name' ? (
+          // Name input step
+          <View style={styles.modalBody}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Friend's Name</Text>
+              <TextInput
+                ref={nameInputRef}
+                style={styles.textInput}
+                placeholder="Enter name"
+                placeholderTextColor="#777"
+                value={newFriendName}
+                onChangeText={setNewFriendName}
+                returnKeyType="next"
+                onSubmitEditing={proceedToLocationStep}
+                autoFocus={true}
+                blurOnSubmit={false}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[
+                styles.nextButton, 
+                !newFriendName.trim() ? styles.buttonDisabled : {}
+              ]}
+              onPress={proceedToLocationStep}
+              disabled={!newFriendName.trim()}
+            >
+              <Text style={styles.buttonText}>Continue to Location</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Location search step
+          <View style={styles.modalBody}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Where is {newFriendName} located?</Text>
+              
+              {selectedCity ? (
+                // Display selected city
+                <View style={styles.selectedCityContainer}>
+                  <View style={styles.selectedCityContent}>
+                    <Text style={styles.flagText}>{getFlag(selectedCity.country)}</Text>
+                    <View>
+                      <Text style={styles.selectedCityName}>{selectedCity.name}, {selectedCity.country}</Text>
+                      <Text style={styles.selectedCityTimezone}>{selectedCity.timezone}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setSelectedCity(null);
+                      setSearchQuery('');
+                      searchInputRef.current?.focus();
+                    }} 
+                    style={styles.changeCityButton}
+                  >
+                    <Text style={styles.changeCityText}>Change</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                // City search interface
+                <View>
+                  <TextInput
+                    ref={searchInputRef}
+                    style={styles.searchInput}
+                    placeholder="Search for a city..."
+                    placeholderTextColor="#777"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    returnKeyType="search"
+                    autoFocus={true}
+                  />
+                  
+                  {isSearching ? (
+                    <ActivityIndicator size="large" color="#f4511e" style={styles.loader} />
+                  ) : searchResults.length > 0 ? (
+                    <FlatList
+                      data={searchResults}
+                      keyExtractor={(item) => item.id}
+                      renderItem={renderCityItem}
+                      style={styles.searchResultsList}
+                      nestedScrollEnabled={true}
+                    />
+                  ) : searchQuery.length >= 2 ? (
+                    <Text style={styles.emptyResultsText}>No cities found matching your search</Text>
+                  ) : searchQuery.length > 0 ? (
+                    <Text style={styles.emptyResultsText}>Enter at least 2 characters to search</Text>
+                  ) : null}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={returnToNameStep}
+              >
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+
+              {selectedCity ? (
+                <TouchableOpacity 
+                  style={styles.saveButton}
+                  onPress={saveFriend}
+                >
+                  <Text style={styles.buttonText}>Add Friend</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.saveButton, styles.buttonDisabled]}
+                  disabled={true}
+                >
+                  <Text style={styles.buttonText}>Add Friend</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </Modal>
   );
 
   return (
@@ -400,14 +444,14 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         ListEmptyComponent={<WelcomeWidget />}
       />
       
-      {addPanelVisible && <AddFriendPanel />}
-      
       <TouchableOpacity 
         style={styles.addButton} 
-        onPress={toggleAddPanel}
+        onPress={openAddModal}
       >
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
+      
+      <AddFriendModal />
     </View>
   );
 };
@@ -677,6 +721,124 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
+  // New styles for the full-screen modal
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  modalHeader: {
+    backgroundColor: '#1e1e1e',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f4511e',
+  },
+  modalBody: {
+    flex: 1,
+    padding: 20,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: '#fff',
+    backgroundColor: '#2a2a2a',
+    marginBottom: 10,
+  },
+  searchResultsList: {
+    maxHeight: 300,
+    marginBottom: 10,
+  },
+  cityItem: {
+    backgroundColor: '#1e1e1e',
+    padding: 15,
+    marginVertical: 5,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cityInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  flagText: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  cityTextContainer: {
+    flex: 1,
+  },
+  cityName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  timezone: {
+    fontSize: 14,
+    color: '#aaa',
+    marginTop: 4,
+  },
+  selectText: {
+    color: '#f4511e',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  emptyResultsText: {
+    textAlign: 'center',
+    color: '#aaa',
+    fontSize: 16,
+    marginTop: 15,
+  },
+  selectedCityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#2a2a2a',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  selectedCityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  selectedCityName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  selectedCityTimezone: {
+    fontSize: 14,
+    color: '#aaa',
+    marginTop: 2,
+  },
+  changeCityButton: {
+    backgroundColor: '#333',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  changeCityText: {
+    color: '#fff',
+    fontSize: 14,
+  }
 });
 
 export default FriendListScreen;

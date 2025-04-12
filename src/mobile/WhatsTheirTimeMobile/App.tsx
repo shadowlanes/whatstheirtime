@@ -4,19 +4,12 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import FriendListScreen from './screens/FriendListScreen';
 import FriendDetailScreen from './screens/FriendDetailScreen';
-import CitySearchScreen from './screens/CitySearchScreen';
 import { City } from './models/CityData';
 import { Friend } from './models/Friend';
 
 export type RootStackParamList = {
   FriendList: undefined;
   FriendDetail: { friendId: string };
-  CitySearch: { 
-    onSelect: (city: City) => void;
-    friendId?: string;
-    friendName?: string;
-    friendNotes?: string;
-  };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -44,11 +37,6 @@ export default function App() {
           name="FriendDetail" 
           component={FriendDetailScreen} 
           options={({ route }) => ({ title: "Time Details" })}
-        />
-        <Stack.Screen 
-          name="CitySearch" 
-          component={CitySearchScreen} 
-          options={{ title: "Select Location" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
