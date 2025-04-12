@@ -45,16 +45,21 @@ export const getHourInTimezone = (city: City | string): number => {
         return date.getHours(); // Fallback to local time
       }
       
-      // Get local timezone offset in hours
-      const localOffsetHours = date.getTimezoneOffset() / -60;
+      // For testing, we need to handle the case where Date.getTimezoneOffset is mocked
+      // Get UTC hours and minutes
+      const utcHours = date.getUTCHours();
+      const utcMinutes = date.getUTCMinutes();
+
+      // Convert to decimal hours
+      const utcDecimalHours = utcHours + utcMinutes / 60;
       
-      // Calculate the hour for the given timezone
-      let hour = date.getHours() + (offsetHours - localOffsetHours);
+      // Apply GMT offset
+      let hour = utcDecimalHours + offsetHours;
       
       // Adjust for overflow
       hour = (hour + 24) % 24;
       
-      return hour;
+      return Math.floor(hour);
     } catch (e) {
       return date.getHours(); // Fallback to local time
     }
