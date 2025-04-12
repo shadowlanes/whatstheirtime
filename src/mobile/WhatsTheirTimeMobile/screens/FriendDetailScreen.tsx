@@ -4,15 +4,17 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  Alert,
+  Alert, 
   TextInput,
   ScrollView 
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../App';
 import FriendManager from '../models/Friend';
 import { getLocalDay, getFormattedTimeDifference, getDayDifference } from '../utils/TimeManager';
+import { getTimeOfDay, getHourInTimezone, timeOfDayColors } from '../utils/TimeOfDayUtil';
 
 type FriendDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendDetail'>;
 type FriendDetailScreenRouteProp = RouteProp<RootStackParamList, 'FriendDetail'>;
@@ -70,35 +72,14 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   };
 
-  const editFriend = () => {
+  const editFriendName = () => {
     Alert.prompt(
-      'Edit Contact',
-      'Enter name:',
+      'Edit Name',
+      'Enter new name:',
       [
         {
           text: 'Cancel',
           style: 'cancel',
-        },
-        {
-          text: 'Change Location',
-          onPress: (name) => {
-            if (name && name.trim()) {
-              navigation.navigate('CitySearch', {
-                onSelect: async (city) => {
-                  await friendManager.updateFriend(
-                    friendId,
-                    name.trim(),
-                    city,
-                    friend?.notes || ''
-                  );
-                  loadFriend();
-                },
-                friendId: friendId,
-                friendName: name.trim(),
-                friendNotes: friend?.notes || '',
-              });
-            }
-          },
         },
         {
           text: 'Save',
@@ -118,6 +99,23 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       'plain-text',
       friend?.name
     );
+  };
+
+  const editFriendLocation = () => {
+    navigation.navigate('CitySearch', {
+      onSelect: async (city) => {
+        await friendManager.updateFriend(
+          friendId,
+          friend.name,
+          city,
+          friend?.notes || ''
+        );
+        loadFriend();
+      },
+      friendId: friendId,
+      friendName: friend.name,
+      friendNotes: friend?.notes || '',
+    });
   };
 
   const editNotes = () => {
@@ -168,19 +166,44 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     dayText = 'today';
   }
 
+  // Get time of day for this friend's timezone
+  const hour = getHourInTimezone(friend.city.timezone);
+  const timeOfDay = getTimeOfDay(hour);
+  const gradientColors = timeOfDayColors[timeOfDay];
+
+  // Icons for different times of day (could be replaced with actual image assets)
+  const getTimeOfDayIcon = () => {
+    switch(timeOfDay) {
+      case 'night': return '🌙'; // Moon
+      case 'dawn': return '🌅'; // Sunrise
+      case 'day': return '☀️'; // Sun
+      case 'evening': return '🌇'; // Sunset
+      default: return '⏰'; // Clock
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.name}>{friend.name}</Text>
+          <TouchableOpacity onPress={editFriendName}>
+            <Text style={styles.name}>{friend.name}</Text>
+            <Text style={styles.editHint}>Tap to edit name</Text>
+          </TouchableOpacity>
           <Text style={styles.location}>{friendManager.getFormattedLocation(friend)}</Text>
         </View>
         
-        <View style={styles.timeContainer}>
+        <LinearGradient
+          colors={gradientColors}
+          style={styles.timeContainer}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={styles.timeOfDayIcon}>{getTimeOfDayIcon()}</Text>
           <Text style={styles.time}>{friendManager.getTime(friend)}</Text>
           <Text style={styles.day}>{dayName} ({dayText})</Text>
           <Text style={styles.timeDifference}>{timeDifference}</Text>
-        </View>
+        </LinearGradient>
         
         <View style={styles.notesContainer}>
           <Text style={styles.notesLabel}>Notes:</Text>
@@ -192,8 +215,8 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
         
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.editButton} onPress={editFriend}>
-            <Text style={styles.editButtonText}>Edit</Text>
+          <TouchableOpacity style={styles.editButton} onPress={editFriendLocation}>
+            <Text style={styles.editButtonText}>Change Location</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteButton} onPress={deleteFriend}>
             <Text style={styles.deleteButtonText}>Delete</Text>
@@ -227,6 +250,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  editHint: {
+    fontSize: 12,
+    color: '#4a90e2',
+    marginTop: 2,
+  },
   location: {
     fontSize: 16,
     color: '#666',
@@ -236,20 +264,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 20,
     padding: 20,
-    backgroundColor: '#f9f9f9',
     borderRadius: 10,
+  },
+  timeOfDayIcon: {
+    fontSize: 36,
+    marginBottom: 10,
   },
   time: {
     fontSize: 48,
     fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   day: {
     fontSize: 20,
     marginTop: 10,
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   timeDifference: {
     fontSize: 16,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 10,
   },
   notesContainer: {
@@ -284,7 +323,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'bold', 
   },
   deleteButton: {
     backgroundColor: '#e74c3c',
@@ -293,7 +332,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     alignItems: 'center',
-  },
+  }, 
   deleteButtonText: {
     color: '#fff',
     fontSize: 16,

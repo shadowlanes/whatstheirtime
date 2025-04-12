@@ -7,13 +7,15 @@ import {
   StyleSheet, 
   Alert,
   RefreshControl,
-  Image
+  Image 
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../App';
 import FriendManager, { Friend } from '../models/Friend';
 import { getFormattedTimeDifference, getDayDifference } from '../utils/TimeManager';
+import { TimeOfDay, timeOfDayColors, getTimeOfDay, getHourInTimezone } from '../utils/TimeOfDayUtil';
 
 type FriendListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendList'>;
 
@@ -91,21 +93,32 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
       dayText = ' (yesterday)';
     }
 
+    // Get time of day for this friend's timezone
+    const hour = getHourInTimezone(item.city.timezone);
+    const timeOfDay = getTimeOfDay(hour);
+    const gradientColors = timeOfDayColors[timeOfDay];
+
     return (
       <TouchableOpacity
-        style={styles.friendItem}
         onPress={() => navigation.navigate('FriendDetail', { friendId: item.id })}
       >
-        <View style={styles.friendInfo}>
-          <Text style={styles.friendName}>{item.name}</Text>
-          <Text style={styles.friendLocation}>
-            {friendManager.getFormattedLocation(item)}
-          </Text>
-        </View>
-        <View style={styles.timeInfo}>
-          <Text style={styles.time}>{friendManager.getTime(item)}</Text>
-          <Text style={styles.timeDifference}>{timeDifference}{dayText}</Text>
-        </View>
+        <LinearGradient
+          colors={gradientColors}
+          style={styles.friendItem}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.friendInfo}>
+            <Text style={styles.friendName}>{item.name}</Text>
+            <Text style={styles.friendLocation}>
+              {friendManager.getFormattedLocation(item)}
+            </Text>
+          </View>
+          <View style={styles.timeInfo}>
+            <Text style={styles.time}>{friendManager.getTime(item)}</Text>
+            <Text style={styles.timeDifference}>{timeDifference}{dayText}</Text>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
     );
   };
@@ -153,7 +166,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   friendItem: {
-    backgroundColor: '#fff',
     padding: 15,
     marginHorizontal: 10,
     marginTop: 10,
@@ -173,10 +185,14 @@ const styles = StyleSheet.create({
   friendName: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   friendLocation: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 14, 
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
   },
   timeInfo: {
@@ -186,10 +202,14 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   timeDifference: {
     fontSize: 12,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
   },
   welcomeContainer: {
