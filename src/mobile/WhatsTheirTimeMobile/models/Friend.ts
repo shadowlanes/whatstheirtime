@@ -76,7 +76,7 @@ class FriendManager {
       };
       await this.saveFriends();
     }
-  }
+  } 
 
   public async deleteFriend(id: string): Promise<void> {
     this.friends = this.friends.filter(friend => friend.id !== id);
@@ -90,7 +90,7 @@ class FriendManager {
 
   // Helper function to get local time for friend
   public getTime(friend: Friend): string {
-    return getLocalTime(friend.city.timezone);
+    return getLocalTime(friend.city);
   }
 }
 

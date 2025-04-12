@@ -2,9 +2,14 @@ export interface City {
   id: string;
   name: string;
   country: string;
-  timezone: string;
+  timezone: string; 
   tzName: string;
   alternateNames: string[];
+  alternateTimeZone?: {
+    newTimezone: string;
+    startDay: string; // Format: "DD-MM" (day-month)
+    endDay: string;   // Format: "DD-MM" (day-month)
+  };
 }
 
 export const getFlag = (countryName: string): string => {
@@ -61,16 +66,26 @@ const getCountryCode = (countryName: string): string => {
 // Cities data with GMT offset format timezones
 export const cities: City[] = [
   // United States
-  { id: '1', name: "New York", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: ["NYC", "Big Apple"] },
-  { id: '2', name: "Los Angeles", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["LA", "City of Angels"] },
-  { id: '3', name: "Chicago", country: "USA", timezone: "GMT-6", tzName: "America/Chicago", alternateNames: ["Windy City"] },
-  { id: '4', name: "Washington DC", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: ["DC", "Washington"] },
-  { id: '5', name: "San Francisco", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["SF", "San Fran"] },
-  { id: '6', name: "Miami", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: [] },
-  { id: '7', name: "Boston", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: [] },
-  { id: '8', name: "Houston", country: "USA", timezone: "GMT-6", tzName: "America/Chicago", alternateNames: [] },
-  { id: '9', name: "Seattle", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: [] },
-  { id: '10', name: "Las Vegas", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["Vegas"] },
+  { id: '1', name: "New York", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: ["NYC", "Big Apple"], 
+    alternateTimeZone: { newTimezone: "GMT-4", startDay: "13-03", endDay: "05-11" } },
+  { id: '2', name: "Los Angeles", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["LA", "City of Angels"],
+    alternateTimeZone: { newTimezone: "GMT-7", startDay: "13-03", endDay: "05-11" } },
+  { id: '3', name: "Chicago", country: "USA", timezone: "GMT-6", tzName: "America/Chicago", alternateNames: ["Windy City"],
+    alternateTimeZone: { newTimezone: "GMT-5", startDay: "13-03", endDay: "05-11" } },
+  { id: '4', name: "Washington DC", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: ["DC", "Washington"],
+    alternateTimeZone: { newTimezone: "GMT-4", startDay: "13-03", endDay: "05-11" } },
+  { id: '5', name: "San Francisco", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["SF", "San Fran"],
+    alternateTimeZone: { newTimezone: "GMT-7", startDay: "13-03", endDay: "05-11" } },
+  { id: '6', name: "Miami", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-4", startDay: "13-03", endDay: "05-11" } },
+  { id: '7', name: "Boston", country: "USA", timezone: "GMT-5", tzName: "America/New_York", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-4", startDay: "13-03", endDay: "05-11" } },
+  { id: '8', name: "Houston", country: "USA", timezone: "GMT-6", tzName: "America/Chicago", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-5", startDay: "13-03", endDay: "05-11" } },
+  { id: '9', name: "Seattle", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-7", startDay: "13-03", endDay: "05-11" } },
+  { id: '10', name: "Las Vegas", country: "USA", timezone: "GMT-8", tzName: "America/Los_Angeles", alternateNames: ["Vegas"],
+    alternateTimeZone: { newTimezone: "GMT-7", startDay: "13-03", endDay: "05-11" } },
   
   // India
   { id: '11', name: "New Delhi", country: "India", timezone: "GMT+5.5", tzName: "Asia/Kolkata", alternateNames: ["Delhi"] },
@@ -85,19 +100,32 @@ export const cities: City[] = [
   { id: '20', name: "Lucknow", country: "India", timezone: "GMT+5.5", tzName: "Asia/Kolkata", alternateNames: [] },
   
   // Europe
-  { id: '21', name: "London", country: "UK", timezone: "GMT+0", tzName: "Europe/London", alternateNames: [] },
-  { id: '22', name: "Paris", country: "France", timezone: "GMT+1", tzName: "Europe/Paris", alternateNames: [] },
-  { id: '23', name: "Berlin", country: "Germany", timezone: "GMT+1", tzName: "Europe/Berlin", alternateNames: [] },
-  { id: '24', name: "Madrid", country: "Spain", timezone: "GMT+1", tzName: "Europe/Madrid", alternateNames: [] },
-  { id: '25', name: "Rome", country: "Italy", timezone: "GMT+1", tzName: "Europe/Rome", alternateNames: ["Roma"] },
-  { id: '26', name: "Amsterdam", country: "Netherlands", timezone: "GMT+1", tzName: "Europe/Amsterdam", alternateNames: [] },
-  { id: '27', name: "Brussels", country: "Belgium", timezone: "GMT+1", tzName: "Europe/Brussels", alternateNames: ["Bruxelles", "Brussel"] },
-  { id: '28', name: "Vienna", country: "Austria", timezone: "GMT+1", tzName: "Europe/Vienna", alternateNames: ["Wien"] },
-  { id: '29', name: "Stockholm", country: "Sweden", timezone: "GMT+1", tzName: "Europe/Stockholm", alternateNames: [] },
-  { id: '30', name: "Oslo", country: "Norway", timezone: "GMT+1", tzName: "Europe/Oslo", alternateNames: [] },
-  { id: '31', name: "Copenhagen", country: "Denmark", timezone: "GMT+1", tzName: "Europe/Copenhagen", alternateNames: ["København"] },
-  { id: '32', name: "Dublin", country: "Ireland", timezone: "GMT+0", tzName: "Europe/Dublin", alternateNames: [] },
-  { id: '33', name: "Lisbon", country: "Portugal", timezone: "GMT+0", tzName: "Europe/Lisbon", alternateNames: ["Lisboa"] },
+  { id: '21', name: "London", country: "UK", timezone: "GMT+0", tzName: "Europe/London", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+1", startDay: "26-03", endDay: "29-10" } },
+  { id: '22', name: "Paris", country: "France", timezone: "GMT+1", tzName: "Europe/Paris", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '23', name: "Berlin", country: "Germany", timezone: "GMT+1", tzName: "Europe/Berlin", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '24', name: "Madrid", country: "Spain", timezone: "GMT+1", tzName: "Europe/Madrid", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '25', name: "Rome", country: "Italy", timezone: "GMT+1", tzName: "Europe/Rome", alternateNames: ["Roma"],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '26', name: "Amsterdam", country: "Netherlands", timezone: "GMT+1", tzName: "Europe/Amsterdam", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '27', name: "Brussels", country: "Belgium", timezone: "GMT+1", tzName: "Europe/Brussels", alternateNames: ["Bruxelles", "Brussel"],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '28', name: "Vienna", country: "Austria", timezone: "GMT+1", tzName: "Europe/Vienna", alternateNames: ["Wien"],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '29', name: "Stockholm", country: "Sweden", timezone: "GMT+1", tzName: "Europe/Stockholm", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '30', name: "Oslo", country: "Norway", timezone: "GMT+1", tzName: "Europe/Oslo", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '31', name: "Copenhagen", country: "Denmark", timezone: "GMT+1", tzName: "Europe/Copenhagen", alternateNames: ["København"],
+    alternateTimeZone: { newTimezone: "GMT+2", startDay: "26-03", endDay: "29-10" } },
+  { id: '32', name: "Dublin", country: "Ireland", timezone: "GMT+0", tzName: "Europe/Dublin", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+1", startDay: "26-03", endDay: "29-10" } },
+  { id: '33', name: "Lisbon", country: "Portugal", timezone: "GMT+0", tzName: "Europe/Lisbon", alternateNames: ["Lisboa"],
+    alternateTimeZone: { newTimezone: "GMT+1", startDay: "26-03", endDay: "29-10" } },
   
   // Asia
   { id: '34', name: "Tokyo", country: "Japan", timezone: "GMT+9", tzName: "Asia/Tokyo", alternateNames: [] },
@@ -112,16 +140,20 @@ export const cities: City[] = [
   { id: '43', name: "Kuala Lumpur", country: "Malaysia", timezone: "GMT+8", tzName: "Asia/Kuala_Lumpur", alternateNames: ["KL"] },
   
   // Others
-  { id: '44', name: "Sydney", country: "Australia", timezone: "GMT+11", tzName: "Australia/Sydney", alternateNames: [] },
-  { id: '45', name: "Melbourne", country: "Australia", timezone: "GMT+11", tzName: "Australia/Melbourne", alternateNames: [] },
+  { id: '44', name: "Sydney", country: "Australia", timezone: "GMT+11", tzName: "Australia/Sydney", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+11", startDay: "01-10", endDay: "01-04" } },
+  { id: '45', name: "Melbourne", country: "Australia", timezone: "GMT+11", tzName: "Australia/Melbourne", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT+11", startDay: "01-10", endDay: "01-04" } },
   { id: '46', name: "Dubai", country: "UAE", timezone: "GMT+4", tzName: "Asia/Dubai", alternateNames: [] },
   { id: '47', name: "Moscow", country: "Russia", timezone: "GMT+3", tzName: "Europe/Moscow", alternateNames: ["Москва"] },
   { id: '48', name: "São Paulo", country: "Brazil", timezone: "GMT-3", tzName: "America/Sao_Paulo", alternateNames: ["Sao Paulo"] },
   { id: '49', name: "Mexico City", country: "Mexico", timezone: "GMT-6", tzName: "America/Mexico_City", alternateNames: ["Ciudad de México"] },
   { id: '50', name: "Cairo", country: "Egypt", timezone: "GMT+2", tzName: "Africa/Cairo", alternateNames: ["القاهرة"] },
   { id: '51', name: "Lagos", country: "Nigeria", timezone: "GMT+1", tzName: "Africa/Lagos", alternateNames: [] },
-  { id: '52', name: "Toronto", country: "Canada", timezone: "GMT-5", tzName: "America/Toronto", alternateNames: [] },
-  { id: '53', name: "Vancouver", country: "Canada", timezone: "GMT-8", tzName: "America/Vancouver", alternateNames: [] }
+  { id: '52', name: "Toronto", country: "Canada", timezone: "GMT-5", tzName: "America/Toronto", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-4", startDay: "12-03", endDay: "05-11" } },
+  { id: '53', name: "Vancouver", country: "Canada", timezone: "GMT-8", tzName: "America/Vancouver", alternateNames: [],
+    alternateTimeZone: { newTimezone: "GMT-7", startDay: "12-03", endDay: "05-11" } }
 ];
 
 // Function to search cities based on a query

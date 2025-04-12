@@ -1,4 +1,5 @@
 import { City } from '../models/CityData';
+import { getEffectiveTimezone } from './TimeManager';
 
 // Time of day determination
 export enum TimeOfDay {
@@ -6,7 +7,7 @@ export enum TimeOfDay {
   DAWN = 'dawn',
   DAY = 'day',
   EVENING = 'evening'
-}
+} 
 
 // Colors for different times of day
 export const timeOfDayColors = {
@@ -30,8 +31,9 @@ export const getTimeOfDay = (hour: number): TimeOfDay => {
 }; 
 
 // Gets the hour in the timezone specified by the city
-export const getHourInTimezone = (timezone: string): number => {
+export const getHourInTimezone = (city: City | string): number => {
   const date = new Date();
+  const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
   if (timezone.startsWith('GMT')) {
     try {

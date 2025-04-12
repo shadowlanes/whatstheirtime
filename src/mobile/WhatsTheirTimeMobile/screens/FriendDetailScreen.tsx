@@ -143,7 +143,7 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       'plain-text',
       friend?.notes
     );
-  };
+  }; 
 
   if (!friend) {
     return (
@@ -153,9 +153,9 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   }
 
-  const timeDifference = getFormattedTimeDifference(friend.city.timezone);
-  const dayDifference = getDayDifference(friend.city.timezone);
-  const dayName = getLocalDay(friend.city.timezone);
+  const timeDifference = getFormattedTimeDifference(friend.city);
+  const dayDifference = getDayDifference(friend.city);
+  const dayName = getLocalDay(friend.city);
   
   let dayText = '';
   if (dayDifference === 1) {
@@ -167,7 +167,7 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   // Get time of day for this friend's timezone
-  const hour = getHourInTimezone(friend.city.timezone);
+  const hour = getHourInTimezone(friend.city);
   const timeOfDay = getTimeOfDay(hour);
   const gradientColors = timeOfDayColors[timeOfDay];
 

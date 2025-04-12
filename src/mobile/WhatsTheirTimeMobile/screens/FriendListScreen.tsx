@@ -148,7 +148,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
 
     await friendManager.addFriend(name, city);
     loadFriends();
-    toggleAddPanel();
+    toggleAddPanel(); 
   };
 
   const addNewFriend = () => {
@@ -156,8 +156,8 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const renderFriendItem = ({ item }: { item: Friend }) => {
-    const timeDifference = getFormattedTimeDifference(item.city.timezone);
-    const dayDifference = getDayDifference(item.city.timezone);
+    const timeDifference = getFormattedTimeDifference(item.city);
+    const dayDifference = getDayDifference(item.city);
     
     let dayText = '';
     if (dayDifference === 1) {
@@ -167,7 +167,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     // Get time of day for this friend's timezone
-    const hour = getHourInTimezone(item.city.timezone);
+    const hour = getHourInTimezone(item.city);
     const timeOfDay = getTimeOfDay(hour);
     const gradientColors = timeOfDayColors[timeOfDay];
 
@@ -198,8 +198,8 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
 
   // New grid layout for the friend list
   const renderFriendGrid = ({ item, index }: { item: Friend, index: number }) => {
-    const timeDifference = getFormattedTimeDifference(item.city.timezone);
-    const dayDifference = getDayDifference(item.city.timezone);
+    const timeDifference = getFormattedTimeDifference(item.city);
+    const dayDifference = getDayDifference(item.city);
     
     let dayText = '';
     if (dayDifference === 1) {
@@ -209,7 +209,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     // Get time of day for this friend's timezone
-    const hour = getHourInTimezone(item.city.timezone);
+    const hour = getHourInTimezone(item.city);
     const timeOfDay = getTimeOfDay(hour);
     const gradientColors = timeOfDayColors[timeOfDay];
 

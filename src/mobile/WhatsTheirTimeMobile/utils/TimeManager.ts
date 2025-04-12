@@ -1,5 +1,59 @@
-export const getLocalTime = (timezone: string): string => {
+import { City, cities } from '../models/CityData';
+
+// Helper function to get the effective timezone based on current date and DST rules
+export const getEffectiveTimezone = (city: City): string => {
+  // If no alternate timezone exists, return the default timezone
+  if (!city.alternateTimeZone) {
+    return city.timezone;
+  }
+   
+  const { startDay, endDay, newTimezone } = city.alternateTimeZone;
+  
+  // Current date
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // getMonth() is 0-based
+  const currentDay = now.getDate();
+  
+  // Parse start and end days
+  const [startDayNum, startMonthNum] = startDay.split('-').map(num => parseInt(num, 10));
+  const [endDayNum, endMonthNum] = endDay.split('-').map(num => parseInt(num, 10));
+  
+  // Check if current date is within DST period
+  if (isDateInRange(currentDay, currentMonth, startDayNum, startMonthNum, endDayNum, endMonthNum)) {
+    return newTimezone;
+  }
+  
+  return city.timezone;
+};
+
+// Helper function to check if a date falls within a range
+// Handles cases where the range spans across year boundary (e.g., Oct to Mar)
+const isDateInRange = (
+  day: number, 
+  month: number, 
+  startDay: number, 
+  startMonth: number, 
+  endDay: number, 
+  endMonth: number
+): boolean => {
+  // Convert dates to simple numeric representation for comparison
+  const date = month * 100 + day;
+  const start = startMonth * 100 + startDay;
+  const end = endMonth * 100 + endDay;
+  
+  // If range doesn't cross year boundary
+  if (start <= end) {
+    return date >= start && date <= end;
+  } 
+  // If range crosses year boundary (e.g., Nov to Mar)
+  else {
+    return date >= start || date <= end;
+  }
+};
+
+export const getLocalTime = (city: City | string): string => {
   const date = new Date();
+  const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
   if (timezone.startsWith('GMT')) {
     try {
@@ -19,9 +73,10 @@ export const getLocalTime = (timezone: string): string => {
   return formatTime(date);
 };
 
-export const getLocalDay = (timezone: string): string => {
+export const getLocalDay = (city: City | string): string => {
   const date = new Date();
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
   if (timezone.startsWith('GMT')) {
     try {
@@ -41,9 +96,10 @@ export const getLocalDay = (timezone: string): string => {
   return days[date.getDay()];
 };
 
-export const getDayDifference = (timezone: string): number => {
+export const getDayDifference = (city: City | string): number => {
   const date = new Date();
   const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
   if (timezone.startsWith('GMT')) {
     try {
@@ -68,7 +124,9 @@ export const getDayDifference = (timezone: string): number => {
   return 0; // Same day
 };
 
-export const getFormattedTimeDifference = (timezone: string): string => {
+export const getFormattedTimeDifference = (city: City | string): string => {
+  const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
+  
   if (!timezone.startsWith('GMT')) {
     return 'Unknown';
   }
