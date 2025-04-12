@@ -11,9 +11,9 @@ export enum TimeOfDay {
 // Colors for different times of day
 export const timeOfDayColors = {
   [TimeOfDay.NIGHT]: ['#0F2027', '#203A43', '#2C5364'],
-  [TimeOfDay.DAWN]: ['#FF9966', '#FF5E62', '#FFC371'],
+  [TimeOfDay.DAWN]: ['#a1b4ed', '#a1b4ed', '#FFC371'],
   [TimeOfDay.DAY]: ['#00c6ff', '#4facfe', '#0072ff'],
-  [TimeOfDay.EVENING]: ['#cb2d3e', '#ef473a', '#F2994A']
+  [TimeOfDay.EVENING]: ['#4742db', '#8e68cc', '#FFC371']
 };
 
 // Determines the time of day based on hour (0-23)

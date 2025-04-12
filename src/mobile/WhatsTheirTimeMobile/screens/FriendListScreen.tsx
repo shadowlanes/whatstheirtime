@@ -360,8 +360,8 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
     <View style={styles.welcomeContainer}>
       <Text style={styles.welcomeTitle}>Welcome to What's Their Time</Text>
       <Text style={styles.welcomeDescription}>
-        Keep track of your friends, family, and colleagues across different time zones.
-        Never schedule a meeting at 3 AM for someone again!
+        Keep track of your friends, family and colleagues across different time zones.
+        Never schedule a meeting at 3 AM with someone again!
       </Text>
       <TouchableOpacity 
         style={styles.welcomeButton}

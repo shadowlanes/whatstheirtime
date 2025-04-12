@@ -121,7 +121,7 @@ export const parseGmtOffset = (gmtTimezone: string): number | null => {
   }
   
   // Convert to minutes and adjust for local timezone offset
-  const localOffset = new Date().getTimezoneOffset();
+  const localOffset = new Date().getTimezoneOffset() * -1; // Local offset in minutes
   return Math.round(offsetHours * 60) - localOffset;
 };
 
