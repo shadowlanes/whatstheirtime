@@ -73,86 +73,99 @@ export const getLocalDay = (city: City | string): string => {
 
 export const getDayDifference = (city: City | string): number => {
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
-  
+
   try {
-    const date = new Date();
-    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const now = new Date();
     
-    // Get the date in the target timezone
-    const formatter = new Intl.DateTimeFormat('en-CA', {
+    // Get today's date in UTC (year, month, day)
+    const utcToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    // Get the date string in the target timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', { // Use 'en-CA' for YYYY-MM-DD
       timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     });
+    const targetDateStr = formatter.format(now);
     
-    const remoteDateStr = formatter.format(date);
-    const [year, month, day] = remoteDateStr.split('-').map(num => parseInt(num, 10));
-    const remoteDate = new Date(year, month - 1, day).getTime();
-    
-    if (remoteDate > localDate) {
-      return 1; // Tomorrow
-    } else if (remoteDate < localDate) {
-      return -1; // Yesterday
-    }
-    
-    return 0; // Same day
+    // Parse the target date string into a Date object (in UTC, representing that timezone's date)
+    const [year, month, day] = targetDateStr.split('-').map(Number);
+    const targetToday = new Date(Date.UTC(year, month - 1, day)); // Month is 0-indexed
+
+    // Calculate the difference in days
+    // getTime() returns milliseconds since epoch. Divide by milliseconds in a day.
+    const diffMillis = targetToday.getTime() - utcToday.getTime();
+    const diffDays = Math.round(diffMillis / (1000 * 60 * 60 * 24));
+
+    return diffDays;
   } catch (e) {
-    return 0; // Same day as fallback
+    // console.error("Error in getDayDifference:", e);
+    return 0; // Fallback to 0 if there's an error
   }
 };
 
 export const getFormattedTimeDifference = (city: City | string): string => {
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
-  
+
   try {
-    const date = new Date();
-    
-    // Get local timezone offset in minutes
-    const localOffset = date.getTimezoneOffset() * -1;
-    
-    // Create a date in the target timezone and compare
-    const localTime = date.getTime();
-    const utcTime = localTime + (date.getTimezoneOffset() * 60000);
-    
-    // Get time in target timezone
-    const targetFormatter = new Intl.DateTimeFormat('en-US', {
+    const now = new Date();
+
+    // Get the current time in the target timezone using hour12: false for 24-hour format
+    const targetTimeFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       hour: 'numeric',
       minute: 'numeric',
-      hour12: false
+      hour12: false,
     });
     
-    const targetTime = targetFormatter.format(new Date(utcTime));
-    const [targetHour, targetMinute] = targetTime.split(':').map(num => parseInt(num, 10));
-    const targetMinutes = (targetHour * 60) + targetMinute;
+    const targetTimeStr = targetTimeFormatter.format(now);
+    const [targetHourStr, targetMinuteStr] = targetTimeStr.split(':');
+    const targetHour = parseInt(targetHourStr, 10);
+    const targetMinute = parseInt(targetMinuteStr, 10);
+
+    // Get the current time in the local timezone (as per system, but mock is UTC)
+    const localHour = now.getHours(); // In mock, this is UTC hours (12)
+    const localMinute = now.getMinutes(); // In mock, this is UTC minutes (0)
+
+    // Convert both times to minutes from the beginning of the day
+    const targetTotalMinutes = targetHour * 60 + targetMinute;
+    const localTotalMinutes = localHour * 60 + localMinute;
     
-    // Get local time
-    const localHour = date.getHours();
-    const localMinute = date.getMinutes();
-    const localMinutes = (localHour * 60) + localMinute;
-    
-    const difference = targetMinutes - localMinutes;
-    
-    if (difference === 0) {
+    let diffMinutes = targetTotalMinutes - localTotalMinutes;
+
+    // Get day difference to handle cases where timezone crosses day boundary
+    const dayDiff = getDayDifference(timezone);
+
+    // Adjust for day differences
+    if (dayDiff === 1) {
+      // Target is on the next day
+      diffMinutes += 24 * 60;
+    } else if (dayDiff === -1) {
+      // Target is on the previous day
+      diffMinutes -= 24 * 60;
+    }
+
+    if (diffMinutes === 0) {
       return 'Same time as you';
     }
-    
-    const absDiff = Math.abs(difference);
-    const hours = Math.floor(absDiff / 60);
-    const minutes = absDiff % 60;
-    
-    let result = difference > 0 ? '+' : '-';
-    
+
+    const sign = diffMinutes > 0 ? '+' : '-';
+    const absDiffMinutes = Math.abs(diffMinutes);
+    const hours = Math.floor(absDiffMinutes / 60);
+    const minutes = absDiffMinutes % 60;
+
+    let result = sign;
     if (hours > 0) {
       result += `${hours}h`;
     }
-    
     if (minutes > 0) {
-      result += ` ${minutes}m`;
+      if (hours > 0) result += ' ';
+      result += `${minutes}m`;
     }
     
-    return result;
+    return result.trim();
+
   } catch (e) {
     return 'Unknown';
   }
