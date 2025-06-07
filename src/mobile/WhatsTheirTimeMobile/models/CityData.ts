@@ -4,11 +4,6 @@ export interface City {
   country: string;
   timezone: string; // Now uses IANA timezone format
   alternateNames: string[];
-  alternateTimeZone?: {
-    newTimezone: string; // IANA timezone format
-    startDay: string; // Format: "DD-MM" (day-month)
-    endDay: string;   // Format: "DD-MM" (day-month)
-  };
 }
 
 // Cities data with IANA timezone format

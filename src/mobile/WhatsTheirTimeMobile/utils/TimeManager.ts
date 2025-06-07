@@ -4,27 +4,9 @@ import { City, cities } from '../models/CityData';
 export const getEffectiveTimezone = (city: City): string => {
   // With IANA timezones, DST is handled automatically, so we can simplify this
   // If there's an alternate timezone defined, we can still use the date range logic
-  if (!city.alternateTimeZone) {
+ 
     return city.timezone;
-  }
-   
-  const { startDay, endDay, newTimezone } = city.alternateTimeZone;
-  
-  // Current date
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1; // getMonth() is 0-based
-  const currentDay = now.getDate();
-  
-  // Parse start and end days
-  const [startDayNum, startMonthNum] = startDay.split('-').map(num => parseInt(num, 10));
-  const [endDayNum, endMonthNum] = endDay.split('-').map(num => parseInt(num, 10));
-  
-  // Check if current date is within DST period
-  if (isDateInRange(currentDay, currentMonth, startDayNum, startMonthNum, endDayNum, endMonthNum)) {
-    return newTimezone;
-  }
-  
-  return city.timezone;
+ 
 };
 
 // Helper function to check if a date falls within a range
