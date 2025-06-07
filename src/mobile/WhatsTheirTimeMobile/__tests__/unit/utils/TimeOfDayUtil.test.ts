@@ -1,5 +1,4 @@
 import { TimeOfDay, getTimeOfDay, getHourInTimezone, getTimeOfDayIcon } from '../../../utils/TimeOfDayUtil';
-import { cities } from '../../../models/CityData';
 
 describe('TimeOfDayUtil', () => {
   describe('getTimeOfDay', () => {
