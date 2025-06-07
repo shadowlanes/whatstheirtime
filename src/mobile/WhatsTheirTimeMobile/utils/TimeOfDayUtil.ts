@@ -51,3 +51,14 @@ export const getHourInTimezone = (city: City | string): number => {
     return new Date().getHours();
   }
 };
+
+// Gets the appropriate icon for the time of day
+export const getTimeOfDayIcon = (timeOfDay: TimeOfDay): string => {
+  switch(timeOfDay) {
+    case TimeOfDay.NIGHT: return '🌙'; // Moon
+    case TimeOfDay.DAWN: return '🌅'; // Sunrise
+    case TimeOfDay.DAY: return '☀️'; // Sun
+    case TimeOfDay.EVENING: return '🌇'; // Sunset
+    default: return '⏰'; // Clock
+  }
+};
