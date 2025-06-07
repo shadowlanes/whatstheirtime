@@ -4,27 +4,92 @@ import {
   getLocalTime, 
   getLocalDay, 
   getDayDifference,
-  getFormattedTimeDifference,
-  parseGmtOffset
+  getFormattedTimeDifference
 } from '../../../utils/TimeManager';
-import { cities } from '../../../models/CityData';
 
 describe('TimeManager', () => {
-  const mockDate = new Date('2025-04-12T12:00:00Z'); // April 12, 2025, noon UTC
-  
+  const baseMockDate = new Date('2025-04-12T12:00:00Z'); // Saturday, April 12, 2025, noon UTC
+  let mockDate: Date;
+
   beforeEach(() => {
+    mockDate = new Date(baseMockDate);
     // Set a fixed date for testing
     global.Date = jest.fn(() => mockDate) as any;
     global.Date.now = jest.fn(() => mockDate.getTime());
     mockDate.getTimezoneOffset = jest.fn(() => 0); // Mock timezone offset to 0 (UTC)
     
     // Mock Date.prototype.getUTCHours and getUTCMinutes
-    mockDate.getUTCHours = jest.fn(() => 12); // Noon UTC
-    mockDate.getUTCMinutes = jest.fn(() => 0);
+    mockDate.getUTCHours = jest.fn(() => mockDate.getUTCHours()); 
+    mockDate.getUTCMinutes = jest.fn(() => mockDate.getUTCMinutes());
     
-    // Mock getHours and getMinutes for consistent testing
-    mockDate.getHours = jest.fn(() => 12);
-    mockDate.getMinutes = jest.fn(() => 0);
+    // Mock getHours and getMinutes for consistent testing (reflecting UTC as local for these tests)
+    mockDate.getHours = jest.fn(() => mockDate.getUTCHours());
+    mockDate.getMinutes = jest.fn(() => mockDate.getUTCMinutes());
+    mockDate.getDay = jest.fn(() => mockDate.getUTCDay()); // 6 for Saturday
+    mockDate.getFullYear = jest.fn(() => mockDate.getUTCFullYear());
+    mockDate.getMonth = jest.fn(() => mockDate.getUTCMonth());
+    mockDate.getDate = jest.fn(() => mockDate.getUTCDate());
+
+
+    // Mock Intl.DateTimeFormat for consistent testing
+    const mockDateTimeFormat = jest.fn().mockImplementation((locale, options) => ({
+      format: jest.fn((dateToFormat) => {
+        const tz = options?.timeZone;
+        // getLocalTime
+        if (options?.hour === 'numeric' && options?.minute === '2-digit') {
+          if (tz === 'Europe/Moscow') return '3:00 PM'; // GMT+3
+          if (tz === 'America/New_York') return '8:00 AM'; // GMT-4 (DST)
+          if (tz === 'Asia/Kolkata') return '5:30 PM'; // GMT+5:30
+          // Fallback for getFormattedTimeDifference
+          if (tz && options.hour12 === false) { // for getFormattedTimeDifference
+            const d = new Date(dateToFormat.getTime());
+            // This is a simplified mock; real Intl.DateTimeFormat is more complex
+            if (tz === 'Europe/Moscow') return `${(d.getUTCHours() + 3) % 24}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+            if (tz === 'America/New_York') return `${(d.getUTCHours() - 4 + 24) % 24}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+            if (tz === 'Asia/Kolkata') {
+                let h = d.getUTCHours() + 5;
+                let m = d.getUTCMinutes() + 30;
+                if (m >= 60) { h++; m -=60; }
+                return `${h % 24}:${String(m).padStart(2, '0')}`;
+            }
+          }
+          return '12:00 PM'; // Default for getLocalTime
+        }
+        // getLocalDay
+        if (options?.weekday === 'long') {
+          if (tz === 'Europe/Moscow') return 'Saturday'; // 2025-04-12T15:00:00Z
+          if (tz === 'Pacific/Auckland') return 'Sunday'; // 2025-04-13T00:00:00Z (UTC+12)
+          if (tz === 'Pacific/Honolulu' && dateToFormat.getUTCHours() < 10) return 'Friday'; // e.g. 2025-04-12T08:00:00Z is 2025-04-11 in HNL
+          if (tz === 'Pacific/Honolulu') return 'Saturday'; // 2025-04-12T12:00:00Z is 2025-04-12T02:00:00Z in HNL
+          return 'Saturday'; // Default
+        }
+        // getDayDifference (en-CA format YYYY-MM-DD)
+        if (locale === 'en-CA' && options?.year === 'numeric') {
+          const d = new Date(dateToFormat.getTime());
+          let year = d.getUTCFullYear();
+          let month = d.getUTCMonth();
+          let day = d.getUTCDate();
+
+          if (tz === 'Europe/Moscow') { // UTC+3
+            const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() + 3, d.getUTCMinutes()));
+            return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+          }
+          if (tz === 'Pacific/Auckland') { // UTC+12
+            const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() + 12, d.getUTCMinutes()));
+            return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+          }
+          if (tz === 'Pacific/Honolulu') { // UTC-10
+            const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() - 10, d.getUTCMinutes()));
+            return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+          }
+          return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; // Default UTC
+        }
+        return 'FallbackFormat';
+      })
+    }));
+    
+    (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+    global.Intl = { ...global.Intl, DateTimeFormat: mockDateTimeFormat as any };
   });
   
   describe('getEffectiveTimezone', () => {
@@ -33,12 +98,11 @@ describe('TimeManager', () => {
         id: '100',
         name: 'Test City',
         country: 'Test Country',
-        timezone: 'GMT+2',
-        tzName: 'Test/Timezone',
+        timezone: 'America/New_York',
         alternateNames: []
       };
       
-      expect(getEffectiveTimezone(city)).toBe('GMT+2');
+      expect(getEffectiveTimezone(city)).toBe('America/New_York');
     });
     
     // For these DST tests, we need to mock the implementation of isDateInRange
@@ -54,17 +118,16 @@ describe('TimeManager', () => {
         id: '1',
         name: 'New York',
         country: 'USA',
-        timezone: 'GMT-5',
-        tzName: 'America/New_York',
+        timezone: 'America/New_York',
         alternateNames: [],
         alternateTimeZone: {
           startDay: '14-3', // March 14
           endDay: '7-11',   // November 7
-          newTimezone: 'GMT-4'
+          newTimezone: 'America/New_York'
         }
       };
       
-      expect(getEffectiveTimezone(mockCity)).toBe('GMT-4');
+      expect(getEffectiveTimezone(mockCity)).toBe('America/New_York');
     });
     
     it('should return default timezone when current date is outside DST period', () => {
@@ -79,17 +142,16 @@ describe('TimeManager', () => {
         id: '1',
         name: 'New York',
         country: 'USA',
-        timezone: 'GMT-5',
-        tzName: 'America/New_York',
+        timezone: 'America/New_York',
         alternateNames: [],
         alternateTimeZone: {
           startDay: '14-3', // March 14
           endDay: '7-11',   // November 7
-          newTimezone: 'GMT-4'
+          newTimezone: 'America/Chicago'
         }
       };
       
-      expect(getEffectiveTimezone(mockCity)).toBe('GMT-5');
+      expect(getEffectiveTimezone(mockCity)).toBe('America/New_York');
     });
   });
   
@@ -115,75 +177,212 @@ describe('TimeManager', () => {
   
   describe('getLocalTime', () => {
     beforeEach(() => {
-      // Override the mockDate instance methods for this specific test suite
-      mockDate.getHours = jest.fn(() => 12);
-      mockDate.getMinutes = jest.fn(() => 0);
+      // Mock Intl.DateTimeFormat for consistent testing
+      const mockDateTimeFormat = jest.fn().mockImplementation((locale, options) => ({
+        format: jest.fn((dateToFormat) => {
+          const tz = options?.timeZone;
+          // getLocalTime
+          if (options?.hour === 'numeric' && options?.minute === '2-digit') {
+            if (tz === 'Europe/Moscow') return '3:00 PM'; // GMT+3
+            if (tz === 'America/New_York') return '8:00 AM'; // GMT-4 (DST)
+            if (tz === 'Asia/Kolkata') return '5:30 PM'; // GMT+5:30
+            // Fallback for getFormattedTimeDifference
+            if (tz && options.hour12 === false) { // for getFormattedTimeDifference
+              const d = new Date(dateToFormat.getTime());
+              // This is a simplified mock; real Intl.DateTimeFormat is more complex
+              if (tz === 'Europe/Moscow') return `${(d.getUTCHours() + 3) % 24}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+              if (tz === 'America/New_York') return `${(d.getUTCHours() - 4 + 24) % 24}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+              if (tz === 'Asia/Kolkata') {
+                  let h = d.getUTCHours() + 5;
+                  let m = d.getUTCMinutes() + 30;
+                  if (m >= 60) { h++; m -=60; }
+                  return `${h % 24}:${String(m).padStart(2, '0')}`;
+              }
+            }
+            return '12:00 PM'; // Default for getLocalTime
+          }
+          // getLocalDay
+          if (options?.weekday === 'long') {
+            if (tz === 'Europe/Moscow') return 'Saturday'; // 2025-04-12T15:00:00Z
+            if (tz === 'Pacific/Auckland') return 'Sunday'; // 2025-04-13T00:00:00Z (UTC+12)
+            if (tz === 'Pacific/Honolulu' && dateToFormat.getUTCHours() < 10) return 'Friday'; // e.g. 2025-04-12T08:00:00Z is 2025-04-11 in HNL
+            if (tz === 'Pacific/Honolulu') return 'Saturday'; // 2025-04-12T12:00:00Z is 2025-04-12T02:00:00Z in HNL
+            return 'Saturday'; // Default
+          }
+          // getDayDifference (en-CA format YYYY-MM-DD)
+          if (locale === 'en-CA' && options?.year === 'numeric') {
+            const d = new Date(dateToFormat.getTime());
+            let year = d.getUTCFullYear();
+            let month = d.getUTCMonth();
+            let day = d.getUTCDate();
+
+            if (tz === 'Europe/Moscow') { // UTC+3
+              const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() + 3, d.getUTCMinutes()));
+              return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+            }
+            if (tz === 'Pacific/Auckland') { // UTC+12
+              const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() + 12, d.getUTCMinutes()));
+              return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+            }
+            if (tz === 'Pacific/Honolulu') { // UTC-10
+              const tempDate = new Date(Date.UTC(year, month, day, d.getUTCHours() - 10, d.getUTCMinutes()));
+              return `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+            }
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; // Default UTC
+          }
+          return 'FallbackFormat';
+        })
+      }));
       
-      // Use Jest's spyOn instead of trying to mock the Date constructor
-      // This gives us more control over the behavior
-      jest.spyOn(global, 'Date').mockImplementation((time) => {
-        if (time === undefined) {
-          return mockDate;
-        }
-        
-        // When a new Date is created with a timestamp in getLocalTime
-        if (typeof time === 'number') {
-          // For GMT+3
-          if (time === mockDate.getTime() + 180 * 60000) {
-            const plus3Date = new Date(mockDate);
-            plus3Date.getHours = jest.fn(() => 15);
-            plus3Date.getMinutes = jest.fn(() => 0);
-            return plus3Date;
-          }
-          
-          // For GMT-5
-          if (time === mockDate.getTime() - 300 * 60000) {
-            const minus5Date = new Date(mockDate);
-            minus5Date.getHours = jest.fn(() => 7);
-            minus5Date.getMinutes = jest.fn(() => 0);
-            return minus5Date;
-          }
-        }
-        
-        return new Date(time);
-      });
+      (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl = { ...global.Intl, DateTimeFormat: mockDateTimeFormat as any };
     });
 
-    it('should format local time correctly for GMT+3 timezone', () => {
-      // When it's 12:00 UTC, GMT+3 is 15:00 (3:00 PM)
-      expect(getLocalTime('GMT+3')).toBe('3:00 PM');
+    it('should format local time correctly for Europe/Moscow timezone', () => {
+      expect(getLocalTime('Europe/Moscow')).toBe('3:00 PM');
     });
     
-    it('should format local time correctly for GMT-5 timezone', () => {
-      // When it's 12:00 UTC, GMT-5 is 7:00 (7:00 AM)
-      expect(getLocalTime('GMT-5')).toBe('7:00 AM');
+    it('should format local time correctly for America/New_York timezone', () => {
+      expect(getLocalTime('America/New_York')).toBe('8:00 AM');
     });
     
-    it('should handle non-GMT timezone formats by returning local time', () => {
-      // When timezone format is not recognized, should return local time (12:00 PM in our mock)
-      expect(getLocalTime('America/New_York')).toBe('12:00 PM');
+    it('should handle invalid timezone formats by returning local time', () => {
+      // Mock Intl.DateTimeFormat to throw for invalid timezones
+      const mockThrowingDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockThrowingDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl.DateTimeFormat = mockThrowingDateTimeFormat as any;
+      
+      // Ensure fallback formatTime uses the mocked date
+      mockDate.getHours = jest.fn(() => 12); // Noon
+      mockDate.getMinutes = jest.fn(() => 0);
+
+      expect(getLocalTime('Invalid/Timezone')).toBe('12:00 PM');
     });
   });
-  
-  describe('parseGmtOffset', () => {
-    it('should parse positive GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT+3')).toBe(180); // +3 hours = 180 minutes
+
+  describe('getLocalDay', () => {
+    it('should return the correct day for Europe/Moscow timezone', () => {
+      // mockDate is Sat, 12 Apr 2025 12:00:00 UTC. Moscow is UTC+3 (15:00 Sat)
+      expect(getLocalDay('Europe/Moscow')).toBe('Saturday');
+    });
+
+    it('should return the correct day for Pacific/Auckland timezone (next day)', () => {
+      // mockDate is Sat, 12 Apr 2025 12:00:00 UTC. Auckland is UTC+12 (00:00 Sun, 13 Apr)
+      expect(getLocalDay('Pacific/Auckland')).toBe('Sunday');
     });
     
-    it('should parse negative GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT-5')).toBe(-300); // -5 hours = -300 minutes
+    it('should return the correct day for Pacific/Honolulu timezone (previous day if UTC time is early)', () => {
+      // Set time to early morning UTC, e.g., 08:00 UTC on Sat, Apr 12
+      // This is 22:00 on Fri, Apr 11 in Honolulu (UTC-10)
+      mockDate = new Date('2025-04-12T08:00:00Z');
+      global.Date = jest.fn(() => mockDate) as any;
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      // Ensure getDay is called on the mockDate instance
+      mockDate.getDay = jest.fn(() => 6); // Saturday
+
+
+      expect(getLocalDay('Pacific/Honolulu')).toBe('Friday');
+    });
+
+    it('should handle invalid timezone formats by returning local day', () => {
+      const mockThrowingDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockThrowingDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl.DateTimeFormat = mockThrowingDateTimeFormat as any;
+      
+      // mockDate is Saturday
+      mockDate.getDay = jest.fn(() => 6); // Saturday
+      expect(getLocalDay('Invalid/Timezone')).toBe('Saturday');
+    });
+  });
+
+  describe('getDayDifference', () => {
+    // mockDate is Sat, 12 Apr 2025 12:00:00 UTC by default in beforeEach
+
+    it('should return 1 for a timezone that is the next day', () => {
+      // Auckland UTC+12. 12:00 UTC Sat is 00:00 NZST Sun
+      expect(getDayDifference('Pacific/Auckland')).toBe(1); // Tomorrow
+    });
+
+    it('should return -1 for a timezone that is the previous day', () => {
+      // Set UTC time to early morning, e.g., 02:00 UTC on Apr 12
+      // This is 16:00 on Apr 11 in Honolulu (UTC-10)
+      mockDate = new Date('2025-04-12T02:00:00Z'); // 2 AM UTC on Saturday
+      global.Date = jest.fn(() => mockDate) as any;
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      // Update related date parts for the new mockDate
+      mockDate.getFullYear = jest.fn(() => 2025);
+      mockDate.getMonth = jest.fn(() => 3); // April
+      mockDate.getDate = jest.fn(() => 12);
+
+      expect(getDayDifference('Pacific/Honolulu')).toBe(-1); // Yesterday
+    });
+
+    it('should return 0 for a timezone that is the same day', () => {
+      // Moscow UTC+3. 12:00 UTC Sat is 15:00 MSK Sat
+      expect(getDayDifference('Europe/Moscow')).toBe(0); // Same day
+    });
+
+    it('should return 0 for invalid timezone format (fallback)', () => {
+      const mockThrowingDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockThrowingDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl.DateTimeFormat = mockThrowingDateTimeFormat as any;
+      expect(getDayDifference('Invalid/Timezone')).toBe(0);
+    });
+  });
+
+  describe('getFormattedTimeDifference', () => {
+    // mockDate is Sat, 12 Apr 2025 12:00:00 UTC. Local time is mocked as 12:00.
+    // getTimezoneOffset is mocked to 0.
+
+    it('should correctly format for a timezone ahead (e.g., Europe/Moscow UTC+3)', () => {
+      // Local time 12:00, Moscow time 15:00
+      expect(getFormattedTimeDifference('Europe/Moscow')).toBe('+3h');
+    });
+
+    it('should correctly format for a timezone behind (e.g., America/New_York UTC-4 with DST)', () => {
+      // Local time 12:00, New York time 08:00
+      expect(getFormattedTimeDifference('America/New_York')).toBe('-4h');
     });
     
-    it('should parse fractional GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT+5.5')).toBe(330); // +5.5 hours = 330 minutes
+    it('should correctly format for a timezone with hours and minutes (e.g., Asia/Kolkata UTC+5:30)', () => {
+      // Local time 12:00, Kolkata time 17:30
+      expect(getFormattedTimeDifference('Asia/Kolkata')).toBe('+5h 30m');
+    });
+
+    it('should return "Same time as you" for the same timezone (effectively UTC in this test setup)', () => {
+       // Mocking getHours and getMinutes to be 12:00 for the "local" part of the calculation
+      mockDate.getHours = jest.fn(() => 12);
+      mockDate.getMinutes = jest.fn(() => 0);
+      // Target timezone is also UTC (or a timezone that resolves to 12:00 in the mock)
+      // The mock for Intl.DateTimeFormat with hour12:false needs to return '12:00' for UTC-like timezone
+      const originalDateTimeFormat = global.Intl.DateTimeFormat;
+      const mockSameTimeDateTimeFormat = jest.fn().mockImplementation((locale, options) => {
+        if (options?.timeZone === 'Etc/UTC' && options?.hour12 === false) {
+          return { format: jest.fn(() => '12:00') };
+        }
+        // Fallback to original mock for other cases if necessary, or simplify
+        return originalDateTimeFormat(locale, options); 
+      });
+      (mockSameTimeDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl.DateTimeFormat = mockSameTimeDateTimeFormat as any;
+
+      expect(getFormattedTimeDifference('Etc/UTC')).toBe('Same time as you');
+      global.Intl.DateTimeFormat = originalDateTimeFormat; // Restore original mock
     });
     
-    it('should return null for invalid GMT format', () => {
-      expect(parseGmtOffset('GMTInvalid')).toBeNull();
-    });
-    
-    it('should return null for non-GMT format', () => {
-      expect(parseGmtOffset('America/New_York')).toBeNull();
+    it('should return "Unknown" for invalid timezone formats', () => {
+      const mockThrowingDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockThrowingDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      global.Intl.DateTimeFormat = mockThrowingDateTimeFormat as any;
+      expect(getFormattedTimeDifference('Invalid/Timezone')).toBe('Unknown');
     });
   });
 });

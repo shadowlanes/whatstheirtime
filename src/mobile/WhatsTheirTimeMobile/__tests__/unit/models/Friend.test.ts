@@ -1,10 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FriendManager from '../../../models/Friend';
-import { cities } from '../../../models/CityData';
+// import { cities } from '../../../models/CityData';
+import { City } from '../../../models/CityData';
 
 describe('Friend Model', () => {
   let friendManager: FriendManager;
-  const testCity = cities[0]; // Using the first city in our dataset
+  // const testCity = cities[0]; // Using the first city in our dataset
+  const testCity: City = { 
+    id: '1', 
+    name: 'New York', 
+    country: 'USA', 
+    timezone: 'America/New_York', 
+    alternateNames: ['NYC', 'Big Apple'] 
+  };
+  const anotherTestCity: City = {
+    id: '2',
+    name: 'London',
+    country: 'UK',
+    timezone: 'Europe/London',
+    alternateNames: []
+  };
   
   beforeEach(() => {
     // Clear all mocks before each test
@@ -98,7 +113,8 @@ describe('Friend Model', () => {
       
       await friendManager.loadFriends();
       
-      const newCity = cities[1]; // Different city
+      // const newCity = cities[1]; // Different city
+      const newCity = anotherTestCity; // Different city
       await friendManager.updateFriend('1', 'Updated Name', newCity, 'Updated notes');
       
       const updatedFriend = friendManager.getFriend('1');
