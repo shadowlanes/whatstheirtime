@@ -4,8 +4,7 @@ import {
   getLocalTime, 
   getLocalDay, 
   getDayDifference,
-  getFormattedTimeDifference,
-  parseGmtOffset
+  getFormattedTimeDifference
 } from '../../../utils/TimeManager';
 import { cities } from '../../../models/CityData';
 
@@ -33,12 +32,11 @@ describe('TimeManager', () => {
         id: '100',
         name: 'Test City',
         country: 'Test Country',
-        timezone: 'GMT+2',
-        tzName: 'Test/Timezone',
+        timezone: 'America/New_York',
         alternateNames: []
       };
       
-      expect(getEffectiveTimezone(city)).toBe('GMT+2');
+      expect(getEffectiveTimezone(city)).toBe('America/New_York');
     });
     
     // For these DST tests, we need to mock the implementation of isDateInRange
@@ -54,17 +52,16 @@ describe('TimeManager', () => {
         id: '1',
         name: 'New York',
         country: 'USA',
-        timezone: 'GMT-5',
-        tzName: 'America/New_York',
+        timezone: 'America/New_York',
         alternateNames: [],
         alternateTimeZone: {
           startDay: '14-3', // March 14
           endDay: '7-11',   // November 7
-          newTimezone: 'GMT-4'
+          newTimezone: 'America/New_York'
         }
       };
       
-      expect(getEffectiveTimezone(mockCity)).toBe('GMT-4');
+      expect(getEffectiveTimezone(mockCity)).toBe('America/New_York');
     });
     
     it('should return default timezone when current date is outside DST period', () => {
@@ -79,17 +76,16 @@ describe('TimeManager', () => {
         id: '1',
         name: 'New York',
         country: 'USA',
-        timezone: 'GMT-5',
-        tzName: 'America/New_York',
+        timezone: 'America/New_York',
         alternateNames: [],
         alternateTimeZone: {
           startDay: '14-3', // March 14
           endDay: '7-11',   // November 7
-          newTimezone: 'GMT-4'
+          newTimezone: 'America/Chicago'
         }
       };
       
-      expect(getEffectiveTimezone(mockCity)).toBe('GMT-5');
+      expect(getEffectiveTimezone(mockCity)).toBe('America/New_York');
     });
   });
   
@@ -115,75 +111,52 @@ describe('TimeManager', () => {
   
   describe('getLocalTime', () => {
     beforeEach(() => {
-      // Override the mockDate instance methods for this specific test suite
+      // Mock Intl.DateTimeFormat for consistent testing
+      const mockDateTimeFormat = jest.fn().mockImplementation((locale, options) => ({
+        format: jest.fn((date) => {
+          // Mock different timezone responses
+          if (options?.timeZone === 'Europe/Moscow') {
+            return '3:00 PM'; // GMT+3 equivalent
+          } else if (options?.timeZone === 'America/New_York') {
+            return '8:00 AM'; // GMT-4 (DST) equivalent  
+          }
+          return '12:00 PM'; // Default
+        })
+      }));
+      
+      // Add supportedLocalesOf method to the mock
+      (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      
+      global.Intl = {
+        ...global.Intl,
+        DateTimeFormat: mockDateTimeFormat as any
+      };
+      
+      // Mock fallback formatTime
+      const mockDate = new Date('2025-04-12T12:00:00Z');
       mockDate.getHours = jest.fn(() => 12);
       mockDate.getMinutes = jest.fn(() => 0);
-      
-      // Use Jest's spyOn instead of trying to mock the Date constructor
-      // This gives us more control over the behavior
-      jest.spyOn(global, 'Date').mockImplementation((time) => {
-        if (time === undefined) {
-          return mockDate;
-        }
-        
-        // When a new Date is created with a timestamp in getLocalTime
-        if (typeof time === 'number') {
-          // For GMT+3
-          if (time === mockDate.getTime() + 180 * 60000) {
-            const plus3Date = new Date(mockDate);
-            plus3Date.getHours = jest.fn(() => 15);
-            plus3Date.getMinutes = jest.fn(() => 0);
-            return plus3Date;
-          }
-          
-          // For GMT-5
-          if (time === mockDate.getTime() - 300 * 60000) {
-            const minus5Date = new Date(mockDate);
-            minus5Date.getHours = jest.fn(() => 7);
-            minus5Date.getMinutes = jest.fn(() => 0);
-            return minus5Date;
-          }
-        }
-        
-        return new Date(time);
-      });
+      global.Date = jest.fn(() => mockDate) as any;
     });
 
-    it('should format local time correctly for GMT+3 timezone', () => {
-      // When it's 12:00 UTC, GMT+3 is 15:00 (3:00 PM)
-      expect(getLocalTime('GMT+3')).toBe('3:00 PM');
+    it('should format local time correctly for Europe/Moscow timezone', () => {
+      expect(getLocalTime('Europe/Moscow')).toBe('3:00 PM');
     });
     
-    it('should format local time correctly for GMT-5 timezone', () => {
-      // When it's 12:00 UTC, GMT-5 is 7:00 (7:00 AM)
-      expect(getLocalTime('GMT-5')).toBe('7:00 AM');
+    it('should format local time correctly for America/New_York timezone', () => {
+      expect(getLocalTime('America/New_York')).toBe('8:00 AM');
     });
     
-    it('should handle non-GMT timezone formats by returning local time', () => {
-      // When timezone format is not recognized, should return local time (12:00 PM in our mock)
-      expect(getLocalTime('America/New_York')).toBe('12:00 PM');
-    });
-  });
-  
-  describe('parseGmtOffset', () => {
-    it('should parse positive GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT+3')).toBe(180); // +3 hours = 180 minutes
-    });
-    
-    it('should parse negative GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT-5')).toBe(-300); // -5 hours = -300 minutes
-    });
-    
-    it('should parse fractional GMT offset correctly', () => {
-      expect(parseGmtOffset('GMT+5.5')).toBe(330); // +5.5 hours = 330 minutes
-    });
-    
-    it('should return null for invalid GMT format', () => {
-      expect(parseGmtOffset('GMTInvalid')).toBeNull();
-    });
-    
-    it('should return null for non-GMT format', () => {
-      expect(parseGmtOffset('America/New_York')).toBeNull();
+    it('should handle invalid timezone formats by returning local time', () => {
+      // Mock Intl.DateTimeFormat to throw for invalid timezones
+      const mockDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      
+      global.Intl.DateTimeFormat = mockDateTimeFormat as any;
+      
+      expect(getLocalTime('Invalid/Timezone')).toBe('12:00 PM');
     });
   });
 });

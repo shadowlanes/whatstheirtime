@@ -40,48 +40,63 @@ describe('TimeOfDayUtil', () => {
       global.Date = jest.fn(() => mockDate) as any;
       global.Date.now = jest.fn(() => mockDate.getTime());
       
-      // Mock timezone offset to make tests more predictable
-      // For testing, we'll set our "local" timezone to UTC
-      mockDate.getTimezoneOffset = jest.fn(() => 0);
+      // Mock Intl.DateTimeFormat for consistent testing
+      const mockDateTimeFormat = jest.fn().mockImplementation((locale, options) => ({
+        format: jest.fn((date) => {
+          // Mock different timezone responses
+          if (options?.timeZone === 'Europe/Moscow') {
+            return '15'; // GMT+3 equivalent
+          } else if (options?.timeZone === 'America/New_York') {
+            return '8'; // GMT-4 (DST) equivalent  
+          } else if (options?.timeZone === 'Asia/Kolkata') {
+            return '17'; // GMT+5:30 equivalent
+          }
+          return '12'; // Default UTC
+        })
+      }));
       
-      // Mock hours methods
-      mockDate.getHours = jest.fn(() => 16); // This is what our implementation returns for fallback
-      mockDate.getUTCHours = jest.fn(() => 12);
-      mockDate.getUTCMinutes = jest.fn(() => 0);
+      // Add supportedLocalesOf method to the mock
+      (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      
+      global.Intl = {
+        ...global.Intl,
+        DateTimeFormat: mockDateTimeFormat as any
+      };
+      
+      // Fallback for invalid timezones
+      mockDate.getHours = jest.fn(() => 12);
     });
 
-    it('should calculate the correct hour for GMT+3 timezone', () => {
-      // When local time is noon UTC (12:00), GMT+3 should be 15:00
-      expect(getHourInTimezone('GMT+3')).toBe(15);
+    it('should calculate the correct hour for Europe/Moscow timezone', () => {
+      expect(getHourInTimezone('Europe/Moscow')).toBe(15);
     });
 
-    it('should calculate the correct hour for GMT-5 timezone', () => {
-      // When local time is noon UTC (12:00), GMT-5 should be 7:00
-      expect(getHourInTimezone('GMT-5')).toBe(7);
+    it('should calculate the correct hour for America/New_York timezone', () => {
+      expect(getHourInTimezone('America/New_York')).toBe(8);
     });
 
     it('should handle city objects', () => {
-      // For this test, we'll create a mock city object instead of using cities array
       const mockCity = {
         id: '1',
         name: 'Test City',
         country: 'Test Country',
-        timezone: 'GMT-4',
-        tzName: 'Test/Timezone',
+        timezone: 'Asia/Kolkata',
         alternateNames: []
       };
       
-      // When local time is noon UTC, GMT-4 should be 8:00
-      expect(getHourInTimezone(mockCity)).toBe(8);
+      expect(getHourInTimezone(mockCity)).toBe(17);
     });
 
-    it('should handle non-GMT timezone formats by returning local hour', () => {
-      // For non-GMT formats, it should return local time (16:00 in our mock)
-      expect(getHourInTimezone('America/New_York')).toBe(16);
-    });
-
-    it('should handle invalid GMT formats by returning local hour', () => {
-      expect(getHourInTimezone('GMTInvalid')).toBe(16);
+    it('should handle invalid timezone formats by returning local hour', () => {
+      // Mock Intl.DateTimeFormat to throw for invalid timezones
+      const mockDateTimeFormat = jest.fn().mockImplementation(() => {
+        throw new Error('Invalid timezone');
+      });
+      (mockDateTimeFormat as any).supportedLocalesOf = jest.fn();
+      
+      global.Intl.DateTimeFormat = mockDateTimeFormat as any;
+      
+      expect(getHourInTimezone('Invalid/Timezone')).toBe(12);
     });
   });
 });
