@@ -293,7 +293,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
               {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
             </Text>
             <Text style={styles.currentTimezone}>
-              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+               {' ' + Intl.DateTimeFormat().resolvedOptions().timeZone}
             </Text>
           </View>
         </View>
