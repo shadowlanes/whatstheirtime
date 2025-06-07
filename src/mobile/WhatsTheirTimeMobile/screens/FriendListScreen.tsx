@@ -25,7 +25,7 @@ import { StatusBar } from 'expo-status-bar';
 import { RootStackParamList } from '../App';
 import FriendManager, { Friend } from '../models/Friend';
 import { getFormattedTimeDifference, getDayDifference } from '../utils/TimeManager';
-import { TimeOfDay, timeOfDayColors, getTimeOfDay, getHourInTimezone } from '../utils/TimeOfDayUtil';
+import { TimeOfDay, timeOfDayColors, getTimeOfDay, getHourInTimezone, getTimeOfDayIcon } from '../utils/TimeOfDayUtil';
 import { getFlag, searchCities, City } from '../models/CityData';
 
 type FriendListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendList'>;
@@ -176,7 +176,7 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         onPress={() => navigation.navigate('FriendDetail', { friendId: item.id })}
       >
         <LinearGradient
-          colors={gradientColors}
+          colors={gradientColors as [string, string, ...string[]]}
           style={styles.friendItem}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -225,16 +225,14 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         ]}
       >
         <LinearGradient
-          colors={gradientColors}
+          colors={gradientColors as [string, string, ...string[]]}
           style={styles.gridItemGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View style={styles.timeIconContainer}>
             <Text style={styles.timeIcon}>
-              {timeOfDay === 'night' ? '🌙' : 
-               timeOfDay === 'dawn' ? '🌅' :
-               timeOfDay === 'day' ? '☀️' : '🌇'}
+              {getTimeOfDayIcon(timeOfDay)}
             </Text>
           </View>
           <Text style={styles.gridItemTime}>{friendManager.getTime(item)}</Text>
@@ -290,12 +288,14 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.headerTitle}>What's Their Time</Text>
         <View style={styles.currentTimeContainer}>
           <Text style={styles.currentTimeLabel}>Your Time:</Text>
-          <Text style={styles.currentTime}>
-            {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-          </Text>
-          <Text style={styles.currentTimezone}>
-            {Intl.DateTimeFormat().resolvedOptions().timeZone}
-          </Text>
+          <View style={styles.timeWithTimezoneContainer}>
+            <Text style={styles.currentTime}>
+              {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </Text>
+            <Text style={styles.currentTimezone}>
+              {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </Text>
+          </View>
         </View>
       </View>
       
@@ -487,19 +487,64 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 14,
   },
+  timeWithTimezoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginLeft: 5,
+  },
   currentTime: {
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
-    marginLeft: 5,
   },
   currentTimezone: {
     color: '#aaa',
     fontSize: 12,
-    marginLeft: 8,
+    marginTop: -2, // Slight negative margin to bring timezone closer to time
   },
   gridContainer: {
     padding: 10,
+  },
+  // Friend list item styles (for list view)
+  friendItem: {
+    flexDirection: 'row',
+    padding: 15,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  friendInfo: {
+    flex: 1,
+  },
+  friendName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  friendLocation: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+  },
+  timeInfo: {
+    alignItems: 'flex-end',
+  },
+  time: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  timeDifference: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 2,
   },
   gridItem: {
     flex: 1,

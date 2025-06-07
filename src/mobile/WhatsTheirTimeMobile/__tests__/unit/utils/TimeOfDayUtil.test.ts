@@ -1,4 +1,4 @@
-import { TimeOfDay, getTimeOfDay, getHourInTimezone } from '../../../utils/TimeOfDayUtil';
+import { TimeOfDay, getTimeOfDay, getHourInTimezone, getTimeOfDayIcon } from '../../../utils/TimeOfDayUtil';
 import { cities } from '../../../models/CityData';
 
 describe('TimeOfDayUtil', () => {
@@ -97,6 +97,29 @@ describe('TimeOfDayUtil', () => {
       global.Intl.DateTimeFormat = mockDateTimeFormat as any;
       
       expect(getHourInTimezone('Invalid/Timezone')).toBe(12);
+    });
+  });
+
+  describe('getTimeOfDayIcon', () => {
+    it('should return moon icon for NIGHT', () => {
+      expect(getTimeOfDayIcon(TimeOfDay.NIGHT)).toBe('🌙');
+    });
+
+    it('should return sunrise icon for DAWN', () => {
+      expect(getTimeOfDayIcon(TimeOfDay.DAWN)).toBe('🌅');
+    });
+
+    it('should return sun icon for DAY', () => {
+      expect(getTimeOfDayIcon(TimeOfDay.DAY)).toBe('☀️');
+    });
+
+    it('should return sunset icon for EVENING', () => {
+      expect(getTimeOfDayIcon(TimeOfDay.EVENING)).toBe('🌇');
+    });
+
+    it('should return clock icon for invalid/default time of day', () => {
+      // Test with an invalid value (cast to TimeOfDay for testing)
+      expect(getTimeOfDayIcon('invalid' as TimeOfDay)).toBe('⏰');
     });
   });
 });

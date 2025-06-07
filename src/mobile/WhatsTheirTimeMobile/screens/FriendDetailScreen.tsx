@@ -14,7 +14,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../App';
 import FriendManager from '../models/Friend';
 import { getLocalDay, getFormattedTimeDifference, getDayDifference } from '../utils/TimeManager';
-import { getTimeOfDay, getHourInTimezone, timeOfDayColors } from '../utils/TimeOfDayUtil';
+import { getTimeOfDay, getHourInTimezone, timeOfDayColors, getTimeOfDayIcon } from '../utils/TimeOfDayUtil';
+import { City } from '../models/CityData';
 
 type FriendDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'FriendDetail'>;
 type FriendDetailScreenRouteProp = RouteProp<RootStackParamList, 'FriendDetail'>;
@@ -103,7 +104,7 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const editFriendLocation = () => {
     navigation.navigate('CitySearch', {
-      onSelect: async (city) => {
+      onSelect: async (city: City) => {
         await friendManager.updateFriend(
           friendId,
           friend.name,
@@ -171,17 +172,6 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const timeOfDay = getTimeOfDay(hour);
   const gradientColors = timeOfDayColors[timeOfDay];
 
-  // Icons for different times of day (could be replaced with actual image assets)
-  const getTimeOfDayIcon = () => {
-    switch(timeOfDay) {
-      case 'night': return '🌙'; // Moon
-      case 'dawn': return '🌅'; // Sunrise
-      case 'day': return '☀️'; // Sun
-      case 'evening': return '🌇'; // Sunset
-      default: return '⏰'; // Clock
-    }
-  };
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
@@ -194,12 +184,12 @@ const FriendDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
         
         <LinearGradient
-          colors={gradientColors}
+          colors={gradientColors as [string, string, ...string[]]}
           style={styles.timeContainer}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={styles.timeOfDayIcon}>{getTimeOfDayIcon()}</Text>
+          <Text style={styles.timeOfDayIcon}>{getTimeOfDayIcon(timeOfDay)}</Text>
           <Text style={styles.time}>{friendManager.getTime(friend)}</Text>
           <Text style={styles.day}>{dayName} ({dayText})</Text>
           <Text style={styles.timeDifference}>{timeDifference}</Text>
