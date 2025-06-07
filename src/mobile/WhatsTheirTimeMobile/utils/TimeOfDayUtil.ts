@@ -32,39 +32,22 @@ export const getTimeOfDay = (hour: number): TimeOfDay => {
 
 // Gets the hour in the timezone specified by the city
 export const getHourInTimezone = (city: City | string): number => {
-  const date = new Date();
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
-  if (timezone.startsWith('GMT')) {
-    try {
-      // Parse GMT offset
-      const offsetStr = timezone.substring(3); // Remove 'GMT'
-      const offsetHours = parseFloat(offsetStr);
-      
-      if (isNaN(offsetHours)) {
-        return date.getHours(); // Fallback to local time
-      }
-      
-      // For testing, we need to handle the case where Date.getTimezoneOffset is mocked
-      // Get UTC hours and minutes
-      const utcHours = date.getUTCHours();
-      const utcMinutes = date.getUTCMinutes();
-
-      // Convert to decimal hours
-      const utcDecimalHours = utcHours + utcMinutes / 60;
-      
-      // Apply GMT offset
-      let hour = utcDecimalHours + offsetHours;
-      
-      // Adjust for overflow
-      hour = (hour + 24) % 24;
-      
-      return Math.floor(hour);
-    } catch (e) {
-      return date.getHours(); // Fallback to local time
-    }
+  try {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false
+    });
+    
+    const timeString = formatter.format(date);
+    const hour = parseInt(timeString, 10);
+    
+    return isNaN(hour) ? date.getHours() : hour;
+  } catch (e) {
+    // Fallback to local time if timezone is invalid
+    return new Date().getHours();
   }
-  
-  // Default to local time if timezone format is not recognized
-  return date.getHours();
 };

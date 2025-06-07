@@ -2,7 +2,8 @@ import { City, cities } from '../models/CityData';
 
 // Helper function to get the effective timezone based on current date and DST rules
 export const getEffectiveTimezone = (city: City): string => {
-  // If no alternate timezone exists, return the default timezone
+  // With IANA timezones, DST is handled automatically, so we can simplify this
+  // If there's an alternate timezone defined, we can still use the date range logic
   if (!city.alternateTimeZone) {
     return city.timezone;
   }
@@ -52,111 +53,112 @@ export const isDateInRange = (
 };
 
 export const getLocalTime = (city: City | string): string => {
-  const date = new Date();
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
-  if (timezone.startsWith('GMT')) {
-    try {
-      // Parse GMT offset
-      const offset = parseGmtOffset(timezone);
-      if (offset === null) return formatTime(date);
-      
-      // For testing, we need a more direct way to handle time conversions
-      if (timezone === 'GMT+3') {
-        // Special case for tests
-        return '3:00 PM';
-      } else if (timezone === 'GMT-5') {
-        // Special case for tests
-        return '7:00 AM';
-      }
-      
-      // Calculate the time for the given timezone
-      const localTime = new Date(date.getTime() + (offset * 60000));
-      return formatTime(localTime);
-    } catch (e) {
-      return formatTime(date);
-    }
+  try {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    return formatter.format(date);
+  } catch (e) {
+    // Fallback to local time if timezone is invalid
+    return formatTime(new Date());
   }
-  
-  // Default to local time if timezone format is not recognized
-  return formatTime(date);
 };
 
 export const getLocalDay = (city: City | string): string => {
-  const date = new Date();
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
-  if (timezone.startsWith('GMT')) {
-    try {
-      // Parse GMT offset
-      const offset = parseGmtOffset(timezone);
-      if (offset === null) return days[date.getDay()];
-      
-      // Calculate the date for the given timezone
-      const localTime = new Date(date.getTime() + (offset * 60000));
-      return days[localTime.getDay()];
-    } catch (e) {
-      return days[date.getDay()];
-    }
+  try {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      weekday: 'long'
+    });
+    
+    return formatter.format(date);
+  } catch (e) {
+    // Fallback to local day
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[new Date().getDay()];
   }
-  
-  // Default to local day if timezone format is not recognized
-  return days[date.getDay()];
 };
 
 export const getDayDifference = (city: City | string): number => {
-  const date = new Date();
-  const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
-  if (timezone.startsWith('GMT')) {
-    try {
-      // Parse GMT offset
-      const offset = parseGmtOffset(timezone);
-      if (offset === null) return 0;
-      
-      // Calculate the date for the given timezone
-      const localTime = new Date(date.getTime() + (offset * 60000));
-      const remoteDate = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate()).getTime();
-      
-      if (remoteDate > localDate) {
-        return 1; // Tomorrow
-      } else if (remoteDate < localDate) {
-        return -1; // Yesterday
-      }
-    } catch (e) {
-      return 0;
+  try {
+    const date = new Date();
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    
+    // Get the date in the target timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    
+    const remoteDateStr = formatter.format(date);
+    const [year, month, day] = remoteDateStr.split('-').map(num => parseInt(num, 10));
+    const remoteDate = new Date(year, month - 1, day).getTime();
+    
+    if (remoteDate > localDate) {
+      return 1; // Tomorrow
+    } else if (remoteDate < localDate) {
+      return -1; // Yesterday
     }
+    
+    return 0; // Same day
+  } catch (e) {
+    return 0; // Same day as fallback
   }
-  
-  return 0; // Same day
 };
 
 export const getFormattedTimeDifference = (city: City | string): string => {
   const timezone = typeof city === 'string' ? city : getEffectiveTimezone(city);
   
-  if (!timezone.startsWith('GMT')) {
-    return 'Unknown';
-  }
-  
   try {
-    // Parse GMT offset from the timezone string
-    const remoteOffset = parseGmtOffset(timezone);
-    if (remoteOffset === null) return 'Unknown';
+    const date = new Date();
     
     // Get local timezone offset in minutes
-    const localOffset = new Date().getTimezoneOffset() * -1;
+    const localOffset = date.getTimezoneOffset() * -1;
     
-    // Calculate difference
-    const difference = remoteOffset - localOffset;
+    // Create a date in the target timezone and compare
+    const localTime = date.getTime();
+    const utcTime = localTime + (date.getTimezoneOffset() * 60000);
+    
+    // Get time in target timezone
+    const targetFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false
+    });
+    
+    const targetTime = targetFormatter.format(new Date(utcTime));
+    const [targetHour, targetMinute] = targetTime.split(':').map(num => parseInt(num, 10));
+    const targetMinutes = (targetHour * 60) + targetMinute;
+    
+    // Get local time
+    const localHour = date.getHours();
+    const localMinute = date.getMinutes();
+    const localMinutes = (localHour * 60) + localMinute;
+    
+    const difference = targetMinutes - localMinutes;
     
     if (difference === 0) {
       return 'Same time as you';
     }
     
-    const hours = Math.floor(Math.abs(difference) / 60);
-    const minutes = Math.abs(difference) % 60;
+    const absDiff = Math.abs(difference);
+    const hours = Math.floor(absDiff / 60);
+    const minutes = absDiff % 60;
     
     let result = difference > 0 ? '+' : '-';
     
@@ -172,23 +174,6 @@ export const getFormattedTimeDifference = (city: City | string): string => {
   } catch (e) {
     return 'Unknown';
   }
-};
-
-// Helper function to parse GMT timezone string to minutes offset
-export const parseGmtOffset = (gmtTimezone: string): number | null => {
-  if (!gmtTimezone.startsWith('GMT')) {
-    return null;
-  }
-  
-  const offsetStr = gmtTimezone.substring(3); // Remove 'GMT'
-  const offsetHours = parseFloat(offsetStr);
-  
-  if (isNaN(offsetHours)) {
-    return null;
-  }
-  
-  // Simply convert hours to minutes without adjusting for local timezone
-  return Math.round(offsetHours * 60);
 };
 
 // Helper function to format time as "h:mm AM/PM"

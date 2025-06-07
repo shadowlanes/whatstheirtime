@@ -76,15 +76,14 @@ describe('CityData', () => {
         expect(city).toHaveProperty('name');
         expect(city).toHaveProperty('country');
         expect(city).toHaveProperty('timezone');
-        expect(city).toHaveProperty('tzName');
         expect(city).toHaveProperty('alternateNames');
       });
     });
 
     it('should have valid timezone format for all cities', () => {
-      const validTimezoneRegex = /^(GMT[+-]\d+(\.\d+)?)$/;
+      // IANA timezone format validation - should contain at least one slash
       cities.forEach(city => {
-        expect(validTimezoneRegex.test(city.timezone)).toBe(true);
+        expect(city.timezone).toMatch(/^[A-Za-z_]+\/[A-Za-z_]+$/);
       });
     });
   });
