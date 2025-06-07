@@ -293,6 +293,9 @@ const FriendListScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.currentTime}>
             {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </Text>
+          <Text style={styles.currentTimezone}>
+            {Intl.DateTimeFormat().resolvedOptions().timeZone}
+          </Text>
         </View>
       </View>
       
@@ -489,6 +492,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 5,
+  },
+  currentTimezone: {
+    color: '#aaa',
+    fontSize: 12,
+    marginLeft: 8,
   },
   gridContainer: {
     padding: 10,
