@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - What's Their Time</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Additional styles specific to static pages */
+        .static-page-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(138, 168, 158, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .static-page-container h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .static-page-container h2 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #5a7d7c; /* Ghibli teal */
+            border-bottom: 2px solid #7ea9a7;
+            padding-bottom: 0.5rem;
+        }
+        .static-page-container p,
+        .static-page-container ul li {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+            color: #4a5568;
+        }
+        .static-page-container ul {
+            padding-left: 20px;
+        }
+        .static-page-container strong {
+            color: #5a7d7c;
+        }
+        .static-page-container a {
+            color: #eb6e80; /* Ghibli pink */
+            text-decoration: none;
+        }
+        .static-page-container a:hover {
+            text-decoration: underline;
+        }
+        .static-page-container a.back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #7ea9a7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .static-page-container a.back-link:hover {
+            text-decoration: underline;
+            color: #eb6e80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>What's Their Time</h1>
+        </header>
+        <main class="static-page-container">
+            <h1>Support & FAQ</h1>
+            <p>Welcome to the What's Their Time support page. We're here to help you make the most of our application.</p>
+
+            <h2>About What's Their Time</h2>
+            <p>What's Their Time is a simple and delightful application designed to help you keep track of the current time and activity for your friends, family, and colleagues across different time zones. Our goal is to make global connections easier by providing a quick and visually appealing way to see "what's their time?"</p>
+
+            <h2>Key Features</h2>
+            <ul>
+                <li><strong>Personalized Welcome:</strong> The app greets you by your chosen name.</li>
+                <li><strong>Add Friends:</strong> Easily add friends by their name and city. The app will find the correct timezone.</li>
+                <li><strong>Real-time Updates:</strong> Friend's local times are updated automatically.</li>
+                <li><strong>Activity Indicators:</strong> See at a glance what your friends might be doing (e.g., sleeping, working, having lunch) based on their local time.</li>
+                <li><strong>Visual Theme:</strong> Enjoy a calming, Ghibli-inspired design.</li>
+                <li><strong>PWA Support:</strong> Install the app on your device for easy access (on supported browsers).</li>
+                <li><strong>Data Privacy:</strong> All your data is stored locally on your device/browser.</li>
+            </ul>
+
+            <h2>How to Use</h2>
+            <ol>
+                <li><strong>Enter Your Name:</strong> When you first open the app, you'll be asked for your name. This is just for a personalized greeting.</li>
+                <li><strong>Add a Friend:</strong>
+                    <ul>
+                        <li>Click the "+" floating action button.</li>
+                        <li>Enter your friend's name.</li>
+                        <li>Start typing their city in the "City" field. Suggestions will appear. Select the correct city from the list.</li>
+                        <li>Click "Add Friend".</li>
+                    </ul>
+                </li>
+                <li><strong>View Friends' Times:</strong> Your added friends will appear on the main screen with their current local time and an activity icon.</li>
+                <li><strong>Remove a Friend:</strong> Hover over a friend's card (on desktop) or find the delete option (often an '×' symbol) to remove them.</li>
+            </ol>
+            
+            <h2>Troubleshooting</h2>
+            <ul>
+                <li>
+                    <strong>I can't add a friend / City not found:</strong>
+                    <p>Ensure you are typing the city name correctly. Our city search relies on a comprehensive database, but try common spellings or major nearby cities if a very small town isn't listed. Both friend's name and city must be filled.</p>
+                </li>
+                <li>
+                    <strong>The time for my friend seems incorrect:</strong>
+                    <p>Double-check that you selected the correct city and country for your friend, as this determines their timezone. The app automatically accounts for Daylight Saving Time based on the IANA timezone database. Times update every minute; you can also refresh the page/app.</p>
+                </li>
+                <li>
+                    <strong>The app is not installing / PWA issues:</strong>
+                    <p>Ensure you are using a modern browser that supports Progressive Web Apps (like Chrome, Edge, Safari on iOS). Follow the installation instructions provided on the main page of the app ("How to install this app" button).</p>
+                </li>
+                <li>
+                    <strong>Activity icon seems wrong:</strong>
+                    <p>Activity icons are based on general assumptions for typical daily schedules (e.g., work hours, meal times). They are an estimate and may not perfectly reflect your friend's actual activity.</p>
+                </li>
+            </ul>
+
+            <h2>Frequently Asked Questions (FAQ)</h2>
+            <ul>
+                <li>
+                    <strong>Is What's Their Time free to use?</strong>
+                    <p>Yes, What's Their Time is completely free to use.</p>
+                </li>
+                <li>
+                    <strong>How is my data stored? Where does my information go?</strong>
+                    <p>All information you enter (your name, friends' names, and their cities) is stored locally on your device within your web browser's storage (localStorage). This data is not sent to or stored on any external servers. If you clear your browser data or uninstall the app, this information will be lost.</p>
+                </li>
+                <li>
+                    <strong>How often does the friend's time update?</strong>
+                    <p>The time displayed for each friend updates automatically every minute. The list of friends also re-sorts periodically to keep the earliest times at the top.</p>
+                </li>
+                <li>
+                    <strong>Can I use this app offline?</strong>
+                    <p>Once the app is loaded (and installed as a PWA), it can function offline to display previously added friends' times based on your device's clock. However, searching for new cities to add friends requires an internet connection.</p>
+                </li>
+                 <li>
+                    <strong>How many friends can I add?</strong>
+                    <p>There's no hard limit imposed by the app, but performance might degrade slightly with a very large number of friends due to local storage and rendering limitations.</p>
+                </li>
+            </ul>
+
+            <h2>Contact Us</h2>
+            <p>If you have any other questions, encounter issues, or have suggestions for improvement, please don't hesitate to reach out to us. We value your feedback!</p>
+            <p><strong>Email:</strong> <a href="mailto:soumyadeep.uae@gmail.com">soumyadeep.uae@gmail.com</a></p>
+            
+            
+            <a href="index.html" class="back-link">&larr; Back to App</a>
+        </main>
+        <footer>
+            <p>&copy; 2024 What's Their Time. All rights reserved.</p>
+            <nav>
+                <a href="privacy.html">Privacy Policy</a> | 
+                <a href="support.html">Support</a>
+            </nav>
+        </footer>
+    </div>
+</body>
+</html>
